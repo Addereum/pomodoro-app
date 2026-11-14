@@ -28,7 +28,6 @@ jobs:
         run: |
           wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O /tmp/appimagetool
           chmod +x /tmp/appimagetool
-          # Entpacke appimagetool um FUSE-Probleme in Docker/Runnern zu vermeiden
           (cd /tmp && ./appimagetool --appimage-extract)
           sudo mv /tmp/squashfs-root/AppRun /usr/local/bin/appimagetool
           sudo cp -r /tmp/squashfs-root/usr/* /usr/local/
@@ -99,9 +98,72 @@ jobs:
             installers/dist/*macOS*.dmg
           if-no-files-found: warn
 
+  build-android-apk:
+    name: Build Android APK (Tablet & Smartphone)
+    runs-on: ubuntu-latest
+    if: github.actor == 'addereum'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Web-Assets synchronisieren
+        run: |
+          chmod +x installers/android/*.sh
+          ./installers/android/prepare-assets.sh
+
+      - name: Release Keystore vorbereiten (falls Secret gesetzt)
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > /tmp/release.keystore
+            echo "KEYSTORE_PATH=/tmp/release.keystore" >> $GITHUB_ENV
+            echo "has_keystore=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_keystore=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: APK mit Gradle kompilieren
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: 8.5
+          build-root-directory: installers/android
+          arguments: assembleRelease
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ env.KEYSTORE_PATH }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: APK für Release vorbereiten
+        run: |
+          mkdir -p installers/dist
+          FOUND_APK=$(find installers/android/app/build/outputs/apk/ -name "*.apk" | head -n 1)
+          if [ -n "$FOUND_APK" ]; then
+            cp "$FOUND_APK" installers/dist/Addereums-Pomodoro.apk
+          fi
+
+      - name: Android APK hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: installers/dist/Addereums-Pomodoro.apk
+          if-no-files-found: warn
+
   publish-release:
     name: Publish Multi-Platform GitHub Release
-    needs: [build-packages, build-windows-installer, build-macos-app]
+    needs: [build-packages, build-windows-installer, build-macos-app, build-android-apk]
     runs-on: ubuntu-latest
     if: github.actor == 'addereum'
 
@@ -118,7 +180,7 @@ jobs:
       - name: Prüfsummen (SHA256) für alle Release-Dateien generieren
         run: |
           cd release-files
-          sha256sum *.{deb,rpm,tar.gz,zip,exe,dmg,AppImage} > SHA256SUMS 2>/dev/null || true
+          sha256sum *.{deb,rpm,tar.gz,zip,exe,dmg,AppImage,apk} > SHA256SUMS 2>/dev/null || true
           ls -lh
 
       - name: GitHub Release erstellen & alle Plattform-Pakete anhängen

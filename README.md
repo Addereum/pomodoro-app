@@ -23,6 +23,7 @@ Repository: [https://github.com/addereum/pomodoro-app](https://github.com/addere
 > - 🦎 **openSUSE** (Tumbleweed / Leap)
 > - 🍏 **Apple macOS** (macOS Sonoma, Sequoia, Ventura auf M1/M2/M3/M4 & Intel als `.dmg` / `.app`)
 > - 🪟 **Microsoft Windows 10 & 11** (Standalone `Setup.exe` & Portable `.zip`)
+> - 📱 **Android Tablet & Smartphone** (Installierbare `.apk` Datei & Vollbild PWA)
 > - 🐳 **Docker / Home-Server** (Leichtgewichtiges Nginx-Container-Image für Raspberry Pi & NAS)
 > - 📦 Beliebige Linux-Distributionen via **Universal Portable Tarball** oder `./installers/install-linux.sh`
 >
@@ -134,7 +135,8 @@ Fertig gebaute Pakete befinden sich auf der **[GitHub Releases-Seite](https://gi
 * 📦 **Universelles Linux AppImage:** `Addereums-Pomodoro-1.1.1-x86_64.AppImage` (Herunterladen, `chmod +x` und ausführen)
 * 🔵 **Arch Linux / Manjaro:** `cd installers/arch && makepkg -si`
 * 🍏 **Apple macOS:** `Addereums-Pomodoro-1.1.1-macOS.dmg` oder `.zip` (Einfach in `/Applications` ziehen)
-* 🪟 **Windows 10 / 11:** `Addereums-Pomodoro-Setup.exe` (Installer mit Desktop-Icon) oder `pomodoro-app-1.1.1-windows-x64.zip`
+* 🪟 **Windows 10 / 11:** `Addereums-Pomodoro-Setup.exe` (Installer mit Desktop-Icon) oder `pomodoro-app-1.2.0-windows-x64.zip`
+* 📱 **Android Tablet & Smartphone (.apk):** `Addereums-Pomodoro.apk` (Direkt auf das Tablet herunterladen und installieren)
 * 🐳 **Docker (Raspberry Pi & Heimserver):** `docker compose up -d` (Läuft lokal auf Port 8080)
 * 🐧 **Universal Shell-Installer:** `./installers/install-linux.sh` (benutzerweit ohne Root oder systemweit)
 

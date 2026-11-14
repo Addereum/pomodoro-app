@@ -4,4 +4,11 @@ __pycache__/
 .build-*
 .wine*
 installers/dist/
+*.keystore
+*.jks
+*.base64
+keystore/
+.gradle/
+build/
+
 

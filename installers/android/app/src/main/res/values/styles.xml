@@ -1,0 +1,15 @@
+<resources>
+    <style name="Theme.Pomodoro" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#e03131</item>
+        <item name="colorPrimaryVariant">#c92a2a</item>
+        <item name="colorOnPrimary">#ffffff</item>
+        <item name="android:statusBarColor">#1e1e1e</item>
+        <item name="android:navigationBarColor">#1e1e1e</item>
+        <item name="android:windowBackground">#1e1e1e</item>
+    </style>
+
+    <style name="Theme.Pomodoro.Fullscreen" parent="Theme.Pomodoro">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+</resources>

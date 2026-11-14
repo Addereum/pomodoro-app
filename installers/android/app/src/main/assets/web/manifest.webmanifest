@@ -1,0 +1,22 @@
+{
+  "name": "Addereums Pomodoro",
+  "short_name": "Pomodoro",
+  "description": "Moderner, ablenkungsfreier Fokus- & Produktivitäts-Timer",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1e1e1e",
+  "theme_color": "#e03131",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
