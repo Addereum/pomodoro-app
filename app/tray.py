@@ -19,6 +19,12 @@ try:
     gi.require_version("Gtk", "3.0")
     from gi.repository import Gtk, GLib
 
+    # Silence deprecation notice from libayatana C library
+    try:
+        GLib.log_set_handler('libayatana-appindicator', GLib.LogLevelFlags.LEVEL_WARNING, lambda *a: None, None)
+    except Exception:
+        pass
+
     # Initialize GTK display connection
     init_res = Gtk.init_check(None)
     init_ok = init_res[0] if isinstance(init_res, tuple) else bool(init_res)
