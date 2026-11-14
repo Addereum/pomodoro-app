@@ -50,9 +50,7 @@ class PomodoroTray:
             str(APP_DIR)
         )
         self.indicator.set_icon_theme_path(str(APP_DIR))
-        self.indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
         self.indicator.set_title("Addereums Pomodoro")
-        self.indicator.set_icon_full("icon", "Addereums Pomodoro")
 
         self.phase_names = {
             "focus": "Fokus",
@@ -64,8 +62,10 @@ class PomodoroTray:
         self.is_running = False
         self.formatted_time = "25:00"
 
+        # Build and attach menu BEFORE setting status to ACTIVE
         self.build_menu()
         self.indicator.set_menu(self.menu)
+        self.indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
 
         # Watch stdin for updates from main.py
         GLib.io_add_watch(sys.stdin.fileno(), GLib.IO_IN | GLib.IO_HUP, self.on_stdin_event)

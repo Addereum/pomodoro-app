@@ -170,7 +170,9 @@ class TrayProcessManager:
     def __init__(self, window):
         self.window = window
         self.proc = None
-        self.start()
+        # Only start tray process if a DBus tray watcher is actually available
+        if getattr(self.window, "tray_available", False):
+            self.start()
 
     def start(self):
         tray_script = APP_DIR / "tray.py"
