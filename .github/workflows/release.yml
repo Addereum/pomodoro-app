@@ -5,17 +5,14 @@ on:
     tags:
       - 'v*'
 
-# Berechtigungen für GitHub Releases
 permissions:
   contents: write
 
 jobs:
-  build-and-release:
-    name: Build & Publish Release
+  build-packages:
+    name: Build Linux & Windows Portable Packages
     runs-on: ubuntu-latest
-
-    # 🔒 SICHERHEITS-SCHUTZ:
-    # Nur der Benutzer "addereum" darf Releases erstellen und veröffentlichen!
+    # 🔒 SICHERHEIT: Nur du ("addereum") darfst diesen Workflow ausführen!
     if: github.actor == 'addereum'
 
     steps:
@@ -27,12 +24,71 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm zip imagemagick
 
-      - name: Alle Installer-Pakete bauen (Linux & Windows)
+      - name: Alle Installer-Pakete bauen
         run: |
           chmod +x installers/*.sh installers/windows/*.py
           ./installers/build-all.sh
 
-      - name: GitHub Release erstellen & Pakete anhängen
+      - name: Artefakte hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-artifacts
+          path: |
+            installers/dist/*.deb
+            installers/dist/*.rpm
+            installers/dist/*.tar.gz
+            installers/dist/*.zip
+          if-no-files-found: error
+
+  build-windows-installer:
+    name: Build Standalone Windows Setup (.exe)
+    runs-on: windows-latest
+    if: github.actor == 'addereum'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Windows Launcher Executable generieren
+        shell: bash
+        run: |
+          mkdir -p installers/dist/windows
+          python3 installers/windows/pomodoro-pe-builder.py installers/dist/windows/Pomodoro.exe 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "bin\launcher.ps1"'
+
+      - name: Inno Setup Single-File Installer kompilieren
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installers/windows/pomodoro-setup.iss
+
+      - name: Windows Setup (.exe) hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-setup-exe
+          path: installers/dist/*.exe
+          if-no-files-found: error
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-packages, build-windows-installer]
+    runs-on: ubuntu-latest
+    if: github.actor == 'addereum'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Alle gebauten Artefakte herunterladen
+        uses: actions/download-artifact@v4
+        with:
+          path: release-files
+          merge-multiple: true
+
+      - name: Prüfsummen (SHA256) für alle Release-Dateien generieren
+        run: |
+          cd release-files
+          sha256sum *.{deb,rpm,tar.gz,zip,exe} > SHA256SUMS 2>/dev/null || true
+          ls -lh
+
+      - name: GitHub Release erstellen & alle Pakete anhängen
         uses: softprops/action-gh-release@v2
         with:
           name: "Addereums Pomodoro ${{ github.ref_name }}"
@@ -42,10 +98,6 @@ jobs:
           make_latest: true
           generate_release_notes: true
           files: |
-            installers/dist/*.deb
-            installers/dist/*.rpm
-            installers/dist/*.tar.gz
-            installers/dist/*.zip
-            installers/dist/SHA256SUMS
+            release-files/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
