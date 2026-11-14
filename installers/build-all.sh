@@ -16,7 +16,9 @@ echo ""
 chmod +x "${SCRIPT_DIR}/build-deb.sh"
 chmod +x "${SCRIPT_DIR}/build-rpm.sh"
 chmod +x "${SCRIPT_DIR}/build-tarball.sh"
+chmod +x "${SCRIPT_DIR}/build-appimage.sh"
 chmod +x "${SCRIPT_DIR}/build-windows.sh"
+chmod +x "${SCRIPT_DIR}/macos/build-macos.sh"
 chmod +x "${SCRIPT_DIR}/install-linux.sh"
 chmod +x "${SCRIPT_DIR}/uninstall-linux.sh"
 
@@ -35,16 +37,26 @@ echo "----------------------------------------------------------"
 "${SCRIPT_DIR}/build-tarball.sh"
 echo ""
 
-# 4. Windows App & Installer (.exe & .zip)
+# 4. Linux AppImage / AppDir
+echo "----------------------------------------------------------"
+"${SCRIPT_DIR}/build-appimage.sh"
+echo ""
+
+# 5. macOS App Bundle (.zip)
+echo "----------------------------------------------------------"
+"${SCRIPT_DIR}/macos/build-macos.sh"
+echo ""
+
+# 6. Windows App & Installer (.exe & .zip)
 echo "----------------------------------------------------------"
 "${SCRIPT_DIR}/build-windows.sh"
 echo ""
 
-# 5. Checksums berechnen
+# 7. Checksums berechnen
 echo "----------------------------------------------------------"
 echo "==> Generiere SHA256 Prüfsummen..."
 cd "${DIST_DIR}"
-sha256sum *.{deb,rpm,tar.gz,zip} 2>/dev/null > SHA256SUMS || true
+sha256sum *.{deb,rpm,tar.gz,zip,AppImage,dmg} 2>/dev/null > SHA256SUMS || true
 
 echo ""
 echo "=========================================================="

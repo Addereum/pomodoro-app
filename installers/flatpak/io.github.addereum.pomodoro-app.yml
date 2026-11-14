@@ -1,0 +1,33 @@
+app-id: io.github.addereum.pomodoro-app
+runtime: org.gnome.Platform
+runtime-version: '46'
+sdk: org.gnome.Sdk
+command: pomodoro
+
+finish-args:
+  # X11 + Wayland rendering
+  - --socket=wayland
+  - --socket=fallback-x11
+  # Audio playback
+  - --socket=pulseaudio
+  # Notifications
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.kde.StatusNotifierWatcher
+  # GSettings for DND / Dark Mode
+  - --system-talk-name=org.freedesktop.Accounts
+  - --own-name=org.kde.StatusNotifierItem-1-1
+
+modules:
+  - name: pomodoro-app
+    buildsystem: simple
+    build-commands:
+      - install -d /app/share/pomodoro-app/app
+      - cp -r app/* /app/share/pomodoro-app/app/
+      - install -d /app/bin
+      - install -m 755 run.sh /app/bin/pomodoro
+      - install -Dm644 pomodoro.desktop /app/share/applications/io.github.addereum.pomodoro-app.desktop
+      - install -Dm644 app/icon.svg /app/share/icons/hicolor/scalable/apps/io.github.addereum.pomodoro-app.svg
+      - install -Dm644 app/icon.png /app/share/icons/hicolor/128x128/apps/io.github.addereum.pomodoro-app.png
+    sources:
+      - type: dir
+        path: ../../

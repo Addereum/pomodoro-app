@@ -1,0 +1,48 @@
+# Maintainer: addereum <https://github.com/addereum>
+pkgname=pomodoro-app
+pkgver=1.1.1
+pkgrel=1
+pkgdesc="Addereums Pomodoro – Moderner nativer Fokus- & Produktivitäts-Timer mit GTK4, Libadwaita und WebKit"
+arch=('any')
+url="https://github.com/addereum/pomodoro-app"
+license=('MIT')
+depends=(
+    'python'
+    'python-gobject'
+    'gtk4'
+    'libadwaita'
+    'webkitgtk-6.0'
+    'libnotify'
+)
+optdepends=(
+    'libayatana-appindicator: System-Tray / AppIndicator Unterstützung'
+    'gtk3: Benötigt für isolierten AppIndicator-Begleitprozess'
+    'sound-theme-freedesktop: System-Signalton bei Rundenwechsel'
+)
+source=("$pkgname-$pkgver.tar.gz::https://github.com/addereum/pomodoro-app/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+    cd "${srcdir}/${pkgname}-${pkgver}"
+
+    # Anwendungsdateien installieren
+    install -d "${pkgdir}/usr/share/${pkgname}/app"
+    cp -r app/* "${pkgdir}/usr/share/${pkgname}/app/"
+
+    # Wrapper-Binary in /usr/bin installieren
+    install -d "${pkgdir}/usr/bin"
+    cat << 'EOF' > "${pkgdir}/usr/bin/pomodoro"
+#!/bin/sh
+exec /usr/bin/python3 /usr/share/pomodoro-app/app/main.py "$@"
+EOF
+    chmod 755 "${pkgdir}/usr/bin/pomodoro"
+
+    # Desktop Entry
+    install -Dm644 pomodoro.desktop "${pkgdir}/usr/share/applications/pomodoro.desktop"
+
+    # Icons
+    install -Dm644 app/icon.svg "${pkgdir}/usr/share/icons/hicolor/scalable/apps/pomodoro-app.svg"
+    if [ -f app/icon.png ]; then
+        install -Dm644 app/icon.png "${pkgdir}/usr/share/icons/hicolor/128x128/apps/pomodoro-app.png"
+    fi
+}

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-packages:
-    name: Build Linux & Windows Portable Packages
+    name: Build Linux Packages (DEB, RPM, AppImage, Tarball)
     runs-on: ubuntu-latest
     # 🔒 SICHERHEIT: Nur du ("addereum") darfst diesen Workflow ausführen!
     if: github.actor == 'addereum'
@@ -22,23 +22,33 @@ jobs:
       - name: Systemabhängigkeiten installieren
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm zip imagemagick
+          sudo apt-get install -y rpm zip imagemagick wget file
 
-      - name: Alle Installer-Pakete bauen
+      - name: AppImageTool einrichten
         run: |
-          chmod +x installers/*.sh installers/windows/*.py
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O /tmp/appimagetool
+          chmod +x /tmp/appimagetool
+          # Entpacke appimagetool um FUSE-Probleme in Docker/Runnern zu vermeiden
+          (cd /tmp && ./appimagetool --appimage-extract)
+          sudo mv /tmp/squashfs-root/AppRun /usr/local/bin/appimagetool
+          sudo cp -r /tmp/squashfs-root/usr/* /usr/local/
+
+      - name: Alle Linux & Windows-Basis Pakete bauen
+        run: |
+          chmod +x installers/*.sh installers/windows/*.py installers/macos/*.sh
           ./installers/build-all.sh
 
-      - name: Artefakte hochladen
+      - name: Linux Artefakte hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: package-artifacts
+          name: linux-artifacts
           path: |
             installers/dist/*.deb
             installers/dist/*.rpm
             installers/dist/*.tar.gz
             installers/dist/*.zip
-          if-no-files-found: error
+            installers/dist/*.AppImage
+          if-no-files-found: warn
 
   build-windows-installer:
     name: Build Standalone Windows Setup (.exe)
@@ -66,9 +76,32 @@ jobs:
           path: installers/dist/*.exe
           if-no-files-found: error
 
+  build-macos-app:
+    name: Build macOS DMG & App Bundle (.zip)
+    runs-on: macos-latest
+    if: github.actor == 'addereum'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: macOS App Bundle & DMG erstellen
+        run: |
+          chmod +x installers/macos/*.sh installers/macos/*.py
+          ./installers/macos/build-macos.sh
+
+      - name: macOS Artefakte hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: |
+            installers/dist/*macOS*.zip
+            installers/dist/*macOS*.dmg
+          if-no-files-found: warn
+
   publish-release:
-    name: Publish GitHub Release
-    needs: [build-packages, build-windows-installer]
+    name: Publish Multi-Platform GitHub Release
+    needs: [build-packages, build-windows-installer, build-macos-app]
     runs-on: ubuntu-latest
     if: github.actor == 'addereum'
 
@@ -85,10 +118,10 @@ jobs:
       - name: Prüfsummen (SHA256) für alle Release-Dateien generieren
         run: |
           cd release-files
-          sha256sum *.{deb,rpm,tar.gz,zip,exe} > SHA256SUMS 2>/dev/null || true
+          sha256sum *.{deb,rpm,tar.gz,zip,exe,dmg,AppImage} > SHA256SUMS 2>/dev/null || true
           ls -lh
 
-      - name: GitHub Release erstellen & alle Pakete anhängen
+      - name: GitHub Release erstellen & alle Plattform-Pakete anhängen
         uses: softprops/action-gh-release@v2
         with:
           name: "Addereums Pomodoro ${{ github.ref_name }}"

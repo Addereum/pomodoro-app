@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  pomodoro:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: addereum/pomodoro-app:latest
+    container_name: addereums-pomodoro
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - TZ=Europe/Berlin
