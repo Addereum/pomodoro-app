@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build Debian / Ubuntu (.deb) package
-VERSION="1.0.0"
+VERSION="1.1.1"
 PKG_NAME="pomodoro-app"
 ARCH="all"
 DEB_NAME="${PKG_NAME}_${VERSION}_${ARCH}.deb"
@@ -29,14 +29,14 @@ mkdir -p "${BUILD_DIR}/usr/share/icons/hicolor/scalable/apps"
 # 1. DEBIAN/control
 cat << 'EOF' > "${BUILD_DIR}/DEBIAN/control"
 Package: pomodoro-app
-Version: 1.0.0
+Version: 1.1.1
 Section: utils
 Priority: optional
 Architecture: all
 Maintainer: addereum <https://github.com/addereum>
 Homepage: https://github.com/addereum/pomodoro-app
 Depends: python3, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-webkit-6.0, libnotify-bin
-Recommends: sound-theme-freedesktop, gir1.2-ayatanaappindicator3-0.1, gir1.2-gtk-3.0
+Recommends: sound-theme-freedesktop, gnome-shell-extension-appindicator, gir1.2-ayatanaappindicator3-0.1, gir1.2-gtk-3.0
 Description: Addereums Pomodoro – Moderner Fokus- & Produktivitaets-Timer
  Schlanker, nativer Pomodoro-Timer mit GTK4, Libadwaita und WebKitGTK.
  Bietet randloses Design, Soundeffekte, prozedurales Umgebungsrauschen,

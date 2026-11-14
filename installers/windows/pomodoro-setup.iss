@@ -4,7 +4,7 @@
 ; =====================================================================
 
 #define MyAppName "Addereums Pomodoro"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.1"
 #define MyAppPublisher "addereum"
 #define MyAppURL "https://github.com/addereum/pomodoro-app"
 #define MyAppExeName "Pomodoro.exe"

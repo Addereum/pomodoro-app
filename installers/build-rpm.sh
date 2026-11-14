@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build Fedora / RHEL / openSUSE (.rpm) package
-VERSION="1.0.0"
+VERSION="1.1.1"
 PKG_NAME="pomodoro-app"
 RELEASE="1"
 
@@ -35,7 +35,7 @@ License:        MIT
 URL:            https://github.com/addereum/pomodoro-app
 BuildArch:      noarch
 Requires:       python3, python3-gobject, gtk4, libadwaita, webkitgtk6.0, libnotify
-Recommends:     libayatana-appindicator-gtk3, gtk3
+Recommends:     gnome-shell-extension-appindicator, libayatana-appindicator-gtk3, gtk3
 
 %description
 Addereums Pomodoro: Schlanker, nativer Pomodoro-Timer mit GTK4, Libadwaita und WebKitGTK.

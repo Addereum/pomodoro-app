@@ -42,16 +42,16 @@ check_dependencies() {
         
         if command -v dnf >/dev/null 2>&1; then
             echo "👉 Fedora / RHEL:"
-            echo "   sudo dnf install -y python3-gobject gtk4 libadwaita webkitgtk6.0 libnotify"
+            echo "   sudo dnf install -y python3-gobject gtk4 libadwaita webkitgtk6.0 libnotify gnome-shell-extension-appindicator libayatana-appindicator-gtk3 gtk3"
         elif command -v apt-get >/dev/null 2>&1; then
             echo "👉 Ubuntu / Debian / Pop!_OS / Mint:"
-            echo "   sudo apt update && sudo apt install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 libnotify-bin"
+            echo "   sudo apt update && sudo apt install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit-6.0 libnotify-bin gnome-shell-extension-appindicator gir1.2-ayatanaappindicator3-0.1 gir1.2-gtk-3.0"
         elif command -v pacman >/dev/null 2>&1; then
             echo "👉 Arch Linux / Manjaro:"
-            echo "   sudo pacman -S --needed python-gobject gtk4 libadwaita webkitgtk-6.0 libnotify"
+            echo "   sudo pacman -S --needed python-gobject gtk4 libadwaita webkitgtk-6.0 libnotify libayatana-appindicator gtk3"
         elif command -v zypper >/dev/null 2>&1; then
             echo "👉 openSUSE:"
-            echo "   sudo zypper in python3-gobject typelib-Gtk-4_0 typelib-Adw-1 typelib-WebKit-6_0 libnotify-tools"
+            echo "   sudo zypper in python3-gobject typelib-Gtk-4_0 typelib-Adw-1 typelib-WebKit-6_0 libnotify-tools typelib-AyatanaAppIndicator3-0_1"
         fi
         echo ""
         echo "(Tipp: Du kannst die App trotzdem installieren oder jederzeit mit '--web' im Browser nutzen.)"
