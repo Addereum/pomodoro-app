@@ -19,8 +19,9 @@ android {
 
     signingConfigs {
         release {
-            if (System.getenv("ANDROID_KEYSTORE_PATH") != null && new File(System.getenv("ANDROID_KEYSTORE_PATH")).exists()) {
-                storeFile file(System.getenv("ANDROID_KEYSTORE_PATH"))
+            def ksPath = System.getenv("ANDROID_KEYSTORE_PATH")
+            if (ksPath != null && file(ksPath).exists()) {
+                storeFile file(ksPath)
                 storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "pomodoro123"
                 keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: "addereum"
                 keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: "pomodoro123"
@@ -32,7 +33,8 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            if (System.getenv("ANDROID_KEYSTORE_PATH") != null && new File(System.getenv("ANDROID_KEYSTORE_PATH")).exists()) {
+            def ksPath = System.getenv("ANDROID_KEYSTORE_PATH")
+            if (ksPath != null && file(ksPath).exists()) {
                 signingConfig signingConfigs.release
             } else {
                 signingConfig signingConfigs.debug

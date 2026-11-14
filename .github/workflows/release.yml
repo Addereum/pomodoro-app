@@ -113,8 +113,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.5'
+
+      - name: Android SDK Lizenzen akzeptieren
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses 2>/dev/null || true
 
       - name: Web-Assets synchronisieren
         run: |
@@ -135,11 +141,9 @@ jobs:
           fi
 
       - name: APK mit Gradle kompilieren
-        uses: gradle/gradle-build-action@v3
-        with:
-          gradle-version: 8.5
-          build-root-directory: installers/android
-          arguments: assembleRelease
+        working-directory: installers/android
+        run: |
+          gradle assembleRelease --no-daemon
         env:
           ANDROID_KEYSTORE_PATH: ${{ env.KEYSTORE_PATH }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
