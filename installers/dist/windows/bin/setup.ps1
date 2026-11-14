@@ -54,10 +54,17 @@ $DefaultInstallPath = "$env:LOCALAPPDATA\Programs\PomodoroApp"
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,20">
-            <TextBlock Text="🍅 Addereums Pomodoro" FontSize="24" FontWeight="Bold" Foreground="#ffffff"/>
-            <TextBlock Text="Fokus- &amp; Produktivitäts-Timer | https://github.com/addereum/pomodoro-app" FontSize="12" Foreground="#a0a0a5" Margin="0,4,0,0"/>
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Image Name="imgLogo" Grid.Column="0" Width="44" Height="44" Margin="0,0,14,0" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="Addereums Pomodoro" FontSize="22" FontWeight="Bold" Foreground="#ffffff"/>
+                <TextBlock Text="Fokus- &amp; Produktivitäts-Timer | https://github.com/addereum/pomodoro-app" FontSize="12" Foreground="#a0a0a5" Margin="0,2,0,0"/>
+            </StackPanel>
+        </Grid>
 
         <!-- Main Body -->
         <Border Grid.Row="1" Background="#282828" CornerRadius="12" Padding="20" BorderBrush="#383838" BorderThickness="1">
@@ -106,6 +113,21 @@ $btnCancel = $window.FindName("btnCancel")
 $btnInstall = $window.FindName("btnInstall")
 
 $txtPath.Text = $DefaultInstallPath
+
+$iconFile = "$SourceDir\app\icon.ico"
+if (-not (Test-Path $iconFile)) { $iconFile = "$SourceDir\icon.ico" }
+
+if (Test-Path $iconFile) {
+    try {
+        $bitmap = New-Object System.Windows.Media.Imaging.BitmapImage
+        $bitmap.BeginInit()
+        $bitmap.UriSource = New-Object System.Uri($iconFile, [System.UriKind]::Absolute)
+        $bitmap.EndInit()
+        $window.Icon = $bitmap
+        $imgLogo = $window.FindName("imgLogo")
+        if ($imgLogo) { $imgLogo.Source = $bitmap }
+    } catch {}
+}
 
 $btnBrowse.Add_Click({
     $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
