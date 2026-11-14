@@ -44,6 +44,10 @@ Repository: [https://github.com/addereum/pomodoro-app](https://github.com/addere
 
 2. **Native Fedora / GNOME Integration**
    - **GTK4 & Libadwaita Headerbar**: Integriert sich nahtlos in die GNOME-Desktop-Umgebung.
+   - **System-Tray & AppIndicator**: Läuft auf Wunsch minimiert im Panel mit Live-Countdown und Schnellsteuerung (*Fenster zeigen, Pause, Überspringen, Beenden*).
+     > 💡 *Hinweis für GNOME:* GNOME Shell hat standardmäßig keine Tray-Symbole im oberen Panel. Installiere einfach `sudo dnf install gnome-shell-extension-appindicator` (Fedora) bzw. `sudo apt install gnome-shell-extension-appindicator` (Ubuntu), um Status-Icons in der oberen Leiste zu aktivieren.
+   - **🔕 Automatischer Nicht-Stören-Modus (DND)**: Schaltet Benachrichtigungs-Popups während aktiver Fokus-Zeiten automatisch stumm und stellt sie danach wieder her.
+   - **📋 Standup (MD) Export**: Kopiert einen formatierten Markdown-Tagesbericht für Standups oder GitHub PRs in die Zwischenablage.
    - **Native System-Benachrichtigungen**: Nutzt `notify-send` / Freedesktop-Notifications inklusive App-Icon bei Intervallende.
    - **Automatischer Dark/Light Theme Sync**: Passt sich automatisch dem systemweiten GNOME-Erscheinungsbild an.
    - **Titel-Aktualisierung**: Verbleibende Restzeit direkt in der Fensterleiste sichtbar (`(24:59) Fokus - Addereums Pomodoro`).

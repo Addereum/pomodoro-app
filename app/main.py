@@ -87,9 +87,9 @@ window.pomodoro-window {
     color: #1d1d1f;
 }
 
-.titlebar-btn.close:hover {
-    background-color: #e03131 !important;
-    color: #ffffff !important;
+window.pomodoro-window .custom-titlebar .titlebar-btn.close:hover {
+    background-color: #e03131;
+    color: #ffffff;
 }
 """
 
@@ -133,6 +133,38 @@ class DndManager:
                 pass
 
 
+def check_tray_host_available() -> bool:
+    """Checks if a StatusNotifierWatcher or System Tray host is active on DBus."""
+    try:
+        bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        proxy = Gio.DBusProxy.new_sync(
+            bus,
+            Gio.DBusProxyFlags.DO_NOT_LOAD_PROPERTIES,
+            None,
+            "org.freedesktop.DBus",
+            "/org/freedesktop/DBus",
+            "org.freedesktop.DBus",
+            None
+        )
+        for watcher in [
+            "org.kde.StatusNotifierWatcher",
+            "org.ayatana.StatusNotifierWatcher",
+            "org.freedesktop.StatusNotifierWatcher"
+        ]:
+            res = proxy.call_sync(
+                "NameHasOwner",
+                GLib.Variant("(s)", (watcher,)),
+                Gio.DBusCallFlags.NONE,
+                -1,
+                None
+            )
+            if res and res.unpack()[0]:
+                return True
+        return False
+    except Exception:
+        return False
+
+
 class TrayProcessManager:
     """Spawns and communicates with the isolated Gtk 3.0 AppIndicator tray companion."""
     def __init__(self, window):
@@ -149,7 +181,7 @@ class TrayProcessManager:
                 [sys.executable, str(tray_script)],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
+                stderr=None,
                 text=True,
                 bufsize=1
             )
@@ -223,6 +255,11 @@ class PomodoroWindow(Adw.ApplicationWindow):
 
         self.is_compact = False
         self.close_to_tray = True
+        self.tray_available = check_tray_host_available()
+
+        if not self.tray_available:
+            print("[Tray Info] Kein aktiver StatusNotifierWatcher / Tray-Host auf DBus gefunden.")
+            print("            (Hinweis: Standard-GNOME auf Fedora unterstützt Tray-Icons über das Paket 'gnome-shell-extension-appindicator').")
 
         # Managers
         self.dnd_manager = DndManager()
@@ -330,8 +367,8 @@ class PomodoroWindow(Adw.ApplicationWindow):
         self.style_manager.connect("notify::dark", self.on_theme_changed)
 
     def on_close_request(self, window):
-        """Intercept window close to minimize to tray if enabled"""
-        if self.close_to_tray:
+        """Intercept window close to minimize to tray if enabled and tray host exists"""
+        if self.close_to_tray and self.tray_available:
             self.set_visible(False)
             return True  # Stop default close, window stays alive in tray
         self.cleanup()
@@ -497,6 +534,7 @@ class PomodoroApp(Adw.Application):
         win = self.props.active_window
         if not win:
             win = PomodoroWindow(self)
+        win.set_visible(True)
         win.present()
 
 

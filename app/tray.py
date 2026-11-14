@@ -13,11 +13,6 @@ from pathlib import Path
 
 # Paths
 APP_DIR = Path(__file__).resolve().parent
-ICON_PNG = APP_DIR / "icon.png"
-ICON_SVG = APP_DIR / "icon.svg"
-
-# Prefer PNG if exists, fallback to SVG or generic icon
-ICON_PATH = str(ICON_PNG) if ICON_PNG.exists() else str(ICON_SVG)
 
 try:
     import gi
@@ -25,8 +20,9 @@ try:
     from gi.repository import Gtk, GLib
 
     # Initialize GTK display connection
-    success = Gtk.init_check(None)
-    if not success:
+    init_res = Gtk.init_check(None)
+    init_ok = init_res[0] if isinstance(init_res, tuple) else bool(init_res)
+    if not init_ok:
         sys.exit(0)
 
     try:
@@ -46,13 +42,17 @@ except Exception:
 
 class PomodoroTray:
     def __init__(self):
-        self.indicator = appindicator.Indicator.new(
+        # Initialize Indicator with local icon theme path
+        self.indicator = appindicator.Indicator.new_with_path(
             "addereums-pomodoro",
-            ICON_PATH,
-            appindicator.IndicatorCategory.APPLICATION_STATUS
+            "icon",
+            appindicator.IndicatorCategory.APPLICATION_STATUS,
+            str(APP_DIR)
         )
+        self.indicator.set_icon_theme_path(str(APP_DIR))
         self.indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
         self.indicator.set_title("Addereums Pomodoro")
+        self.indicator.set_icon_full("icon", "Addereums Pomodoro")
 
         self.phase_names = {
             "focus": "Fokus",
