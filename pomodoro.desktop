@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Addereums Pomodoro
+GenericName=Fokus & Produktivitäts-Timer
+Comment=Addereums Pomodoro – Fokus- & Produktivitäts-Timer
+Exec=/home/lukas/Apps/pomodoro-app/run.sh
+Icon=/home/lukas/Apps/pomodoro-app/app/icon.svg
+Terminal=false
+Categories=Utility;Clock;Office;
+StartupNotify=true
+StartupWMClass=io.github.addereum.pomodoro-app
+Keywords=Pomodoro;Timer;Focus;Produktivität;Clock;Zeit;Addereum;

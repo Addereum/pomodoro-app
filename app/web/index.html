@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Addereums Pomodoro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/svg+xml" href="../icon.svg">
+</head>
+<body class="theme-dark">
+  <div class="app-container">
+    <!-- Header / Navigation -->
+    <header class="app-header">
+      <div class="brand">
+        <img src="../icon.svg" alt="Addereums Pomodoro" class="brand-icon">
+        <span class="brand-title">Addereums Pomodoro</span>
+      </div>
+      <nav class="nav-tabs" role="tablist">
+        <button class="nav-btn active" data-tab="timer" title="Timer (1)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>Timer</span>
+        </button>
+        <button class="nav-btn" data-tab="tasks" title="Aufgaben (2)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+          </svg>
+          <span>Aufgaben</span>
+          <span class="badge" id="task-badge" style="display: none;">0</span>
+        </button>
+        <button class="nav-btn" data-tab="stats" title="Statistik (3)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span>Statistik</span>
+        </button>
+        <button class="nav-btn" data-tab="settings" title="Optionen (4)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+          <span>Optionen</span>
+        </button>
+      </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="app-main">
+      <!-- TAB 1: TIMER -->
+      <section id="tab-timer" class="tab-pane active">
+        <!-- Compact Mini-Player View -->
+        <div class="compact-view" id="compact-view">
+          <div class="compact-left">
+            <span class="compact-phase-badge" id="compact-phase">Fokus</span>
+            <span class="compact-time" id="compact-time">25:00</span>
+          </div>
+          <div class="compact-controls">
+            <button class="compact-ctrl-btn primary" id="compact-toggle" title="Start/Pause">
+              <svg id="compact-icon-play" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              <svg id="compact-icon-pause" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display: none;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            </button>
+            <button class="compact-ctrl-btn" id="compact-add-time" title="+5 Minuten">+5m</button>
+            <button class="compact-ctrl-btn" id="compact-skip" title="Überspringen">⏭</button>
+          </div>
+        </div>
+
+        <!-- Daily Goal Progress Banner -->
+        <div class="daily-goal-bar" id="daily-goal-bar">
+          <div class="daily-goal-header">
+            <span class="daily-goal-title">🎯 Tagesziel:</span>
+            <span class="daily-goal-count" id="daily-goal-count">0 / 6 (0%)</span>
+          </div>
+          <div class="daily-goal-track">
+            <div class="daily-goal-fill" id="daily-goal-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Mode Switcher -->
+        <div class="mode-pill-container">
+          <button class="mode-pill active" data-mode="focus">Fokus</button>
+          <button class="mode-pill" data-mode="shortBreak">Kurze Pause</button>
+          <button class="mode-pill" data-mode="longBreak">Lange Pause</button>
+        </div>
+
+        <!-- Active Task Header Banner -->
+        <div class="active-task-banner" id="active-task-banner" title="Klicken um Aufgaben-Tab zu öffnen">
+          <span class="active-task-icon">🎯</span>
+          <span class="active-task-text" id="active-task-label">Keine Aufgabe gewählt</span>
+          <button class="active-task-clear-btn" id="clear-active-task-btn" title="Aufgabenverknüpfung lösen">&times;</button>
+        </div>
+
+        <!-- Circular Timer Display -->
+        <div class="timer-dial-wrapper">
+          <svg class="timer-dial" viewBox="0 0 280 280">
+            <!-- Background track -->
+            <circle class="timer-track" cx="140" cy="140" r="120" />
+            <!-- Progress stroke -->
+            <circle class="timer-progress" id="timer-progress" cx="140" cy="140" r="120" />
+          </svg>
+
+          <div class="timer-content">
+            <span class="timer-mode-label" id="timer-mode-label">Fokus</span>
+            <div class="timer-time" id="timer-display">25:00</div>
+            <div class="cycle-indicator" id="cycle-indicator" title="Pomodoros in diesem Zyklus">
+              <span class="cycle-dot active"></span>
+              <span class="cycle-dot"></span>
+              <span class="cycle-dot"></span>
+              <span class="cycle-dot"></span>
+            </div>
+            <span class="cycle-count-text" id="cycle-count-text">Runde 1 von 4</span>
+          </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="timer-controls">
+          <button class="control-btn secondary" id="btn-reset" title="Zurücksetzen (R)">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+          </button>
+          
+          <button class="control-btn primary" id="btn-toggle" title="Starten / Pausieren (Leertaste)">
+            <svg id="icon-play" viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+              <polygon points="6 3 20 12 6 21 6 3"/>
+            </svg>
+            <svg id="icon-pause" viewBox="0 0 24 24" width="28" height="28" fill="currentColor" style="display: none;">
+              <rect x="6" y="4" width="4" height="16" rx="1"/>
+              <rect x="14" y="4" width="4" height="16" rx="1"/>
+            </svg>
+            <span id="btn-toggle-label">Starten</span>
+          </button>
+
+          <button class="control-btn secondary" id="btn-add-time" title="5 Minuten verlängern (+5m)">
+            <span style="font-size: 0.82rem; font-weight: 700;">+5m</span>
+          </button>
+
+          <button class="control-btn secondary" id="btn-skip" title="Nächste Phase (S)">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 4 15 12 5 20 5 4" fill="currentColor"/>
+              <line x1="19" y1="5" x2="19" y2="19" stroke-width="2.5"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Ambient Sound Control Bar -->
+        <div class="ambient-bar">
+          <div class="ambient-info">
+            <span>🎧 Fokus-Sound:</span>
+          </div>
+          <div class="ambient-controls">
+            <select id="timer-ambient-select" class="select-box compact-select">
+              <option value="none">Stumm</option>
+              <option value="brown">Braunes Rauschen (Deep Work)</option>
+              <option value="rain">Sanfter Regen</option>
+              <option value="campfire">Kaminfeuer</option>
+            </select>
+            <input type="range" id="timer-ambient-volume" min="0" max="100" value="50" class="range-slider mini-slider" title="Lautstärke Hintergrund-Sound">
+          </div>
+        </div>
+
+        <!-- Quick Summary Bar -->
+        <div class="quick-summary">
+          <div class="summary-item">
+            <span class="summary-val" id="quick-today-count">0</span>
+            <span class="summary-lbl">Heute</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-val" id="quick-today-mins">0m</span>
+            <span class="summary-lbl">Fokuszeit</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-val" id="quick-streak">0 d</span>
+            <span class="summary-lbl">Streak</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: TASKS -->
+      <section id="tab-tasks" class="tab-pane">
+        <div class="section-header">
+          <h2>Aufgaben & Fokus-Ziele</h2>
+          <span class="section-subtitle">Verknüpfe Aufgaben mit Pomodoro-Intervallen</span>
+        </div>
+
+        <!-- Add Task Form -->
+        <form class="task-add-form" id="task-form">
+          <input type="text" id="task-input" class="input-text" placeholder="Woran möchtest du arbeiten?" required maxlength="120">
+          <div class="task-form-row">
+            <label class="task-est-label" for="task-est-input">
+              <span>Geschätzte Pomodoros:</span>
+              <input type="number" id="task-est-input" class="input-number" min="1" max="20" value="2">
+            </label>
+            <button type="submit" class="btn-action primary">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Hinzufügen</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Tasks Filter Bar -->
+        <div class="tasks-filter-bar">
+          <div class="filter-pills">
+            <button class="filter-pill active" data-filter="all">Alle</button>
+            <button class="filter-pill" data-filter="active">Offen</button>
+            <button class="filter-pill" data-filter="completed">Erledigt</button>
+          </div>
+          <button class="btn-text danger" id="btn-clear-completed" title="Alle erledigten Aufgaben löschen">Erledigte leeren</button>
+        </div>
+
+        <!-- Task List -->
+        <ul class="task-list" id="task-list">
+          <!-- Dynamically populated -->
+        </ul>
+        <div class="empty-state" id="task-empty-state" style="display: none;">
+          <p>Keine Aufgaben vorhanden. Erstelle deine erste Aufgabe oben!</p>
+        </div>
+      </section>
+
+      <!-- TAB 3: STATS -->
+      <section id="tab-stats" class="tab-pane">
+        <div class="section-header">
+          <h2>Produktivitäts-Statistik</h2>
+          <span class="section-subtitle">Dein Fokus im Überblick</span>
+        </div>
+
+        <!-- KPI Cards Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-title">Heute abgeschlossen</span>
+            <span class="kpi-value" id="kpi-today-count">0</span>
+            <span class="kpi-desc">Pomodoros</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Fokuszeit heute</span>
+            <span class="kpi-value" id="kpi-today-hours">0h 0m</span>
+            <span class="kpi-desc">Konzentriert</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Aktuelle Serie</span>
+            <span class="kpi-value" id="kpi-streak">0</span>
+            <span class="kpi-desc">Tage in Folge 🔥</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-title">Gesamter Fokus</span>
+            <span class="kpi-value" id="kpi-total-hours">0h 0m</span>
+            <span class="kpi-desc">Alle Zeiten</span>
+          </div>
+        </div>
+
+        <!-- 7-Day Bar Chart -->
+        <div class="chart-container">
+          <h3 class="chart-title">Vergangene 7 Tage (abgeschlossene Pomodoros)</h3>
+          <div class="bar-chart" id="bar-chart">
+            <!-- Dynamically populated bars -->
+          </div>
+        </div>
+
+        <!-- Recent Session Log -->
+        <div class="history-container">
+          <div class="history-header">
+            <h3>Kürzlich abgeschlossene Sessions</h3>
+            <div class="history-header-actions">
+              <button class="btn-text" id="btn-export-csv" title="Als CSV-Tabelle exportieren">📥 CSV</button>
+              <button class="btn-text" id="btn-export-json" title="Als JSON-Daten exportieren">📥 JSON</button>
+              <button class="btn-text danger" id="btn-reset-stats">Reset</button>
+            </div>
+          </div>
+          <ul class="history-list" id="history-list">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+      </section>
+
+      <!-- TAB 4: SETTINGS -->
+      <section id="tab-settings" class="tab-pane">
+        <div class="section-header">
+          <h2>Einstellungen</h2>
+          <span class="section-subtitle">Passe die Intervalle und Optionen an deine Arbeitsweise an</span>
+        </div>
+
+        <form class="settings-form" id="settings-form">
+          <!-- Interval Durations -->
+          <div class="settings-group">
+            <h3>⏱️ Intervalle & Ziele</h3>
+            <div class="settings-grid">
+              <label class="setting-item">
+                <span class="setting-title">Fokus-Dauer (Min.)</span>
+                <input type="number" id="setting-focus-time" class="input-number" min="1" max="90" value="25">
+              </label>
+              <label class="setting-item">
+                <span class="setting-title">Kurze Pause (Min.)</span>
+                <input type="number" id="setting-short-break" class="input-number" min="1" max="30" value="5">
+              </label>
+              <label class="setting-item">
+                <span class="setting-title">Lange Pause (Min.)</span>
+                <input type="number" id="setting-long-break" class="input-number" min="1" max="60" value="15">
+              </label>
+              <label class="setting-item">
+                <span class="setting-title">Runden bis lange Pause</span>
+                <input type="number" id="setting-cycle-target" class="input-number" min="1" max="10" value="4">
+              </label>
+              <label class="setting-item" style="grid-column: span 2;">
+                <span class="setting-title">Tägliches Pomodoro-Ziel</span>
+                <input type="number" id="setting-daily-target" class="input-number" min="1" max="30" value="6" style="width: 80px;">
+              </label>
+            </div>
+          </div>
+
+          <!-- Ambient Soundscapes -->
+          <div class="settings-group">
+            <h3>🎧 Fokus-Sound & Hintergrund</h3>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-title">Hintergrund-Sound während Fokus</span>
+                <span class="setting-desc">Spielt sanfte Hintergrundgeräusche für bessere Konzentration</span>
+              </div>
+              <select id="setting-ambient-type" class="select-box">
+                <option value="none">Aus (Kein Hintergrund-Sound)</option>
+                <option value="brown">Braunes Rauschen (Deep Focus)</option>
+                <option value="rain">Sanfter Regen</option>
+                <option value="campfire">Kaminfeuer</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-title">Hintergrund-Lautstärke</span>
+              </div>
+              <div class="volume-slider-container">
+                <input type="range" id="setting-ambient-volume" min="0" max="100" value="50" class="range-slider">
+                <span id="ambient-volume-label">50%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Automation switches -->
+          <div class="settings-group">
+            <h3>⚡ Automatisierung</h3>
+            <label class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-title">Pausen automatisch starten</span>
+                <span class="toggle-desc">Startet den Pausen-Timer nach Abschluss eines Fokus-Blocks sofort</span>
+              </div>
+              <input type="checkbox" id="setting-auto-break" class="switch">
+            </label>
+            <label class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-title">Fokus automatisch starten</span>
+                <span class="toggle-desc">Startet den nächsten Fokus-Timer nach Ablauf der Pause sofort</span>
+              </div>
+              <input type="checkbox" id="setting-auto-focus" class="switch">
+            </label>
+          </div>
+
+          <!-- Sound Feedback -->
+          <div class="settings-group">
+            <h3>🔔 Audio & Feedback</h3>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-title">Signalton bei Intervallende</span>
+                <span class="setting-desc">Klang-Feedback bei Rundenwechsel</span>
+              </div>
+              <div class="sound-select-row">
+                <select id="setting-sound-type" class="select-box">
+                  <option value="bell">Tibetische Klangschale (Zen Gong)</option>
+                  <option value="chime">Kristall-Chime (Akkord)</option>
+                  <option value="digital">Digitaler Doppel-Beep</option>
+                  <option value="none">Stumm</option>
+                </select>
+                <button type="button" class="btn-action secondary" id="btn-test-sound">Probe hören</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-title">Signalton-Lautstärke</span>
+              </div>
+              <div class="volume-slider-container">
+                <input type="range" id="setting-sound-volume" min="0" max="100" value="80" class="range-slider">
+                <span id="volume-label">80%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Notifications -->
+          <div class="settings-group">
+            <h3>🖥️ System & Benachrichtigungen</h3>
+            <label class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-title">Desktop-Benachrichtigungen</span>
+                <span class="toggle-desc">Native Benachrichtigung auf Fedora / GNOME anzeigen</span>
+              </div>
+              <input type="checkbox" id="setting-notify-desktop" class="switch" checked>
+            </label>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-title">Erscheinungsbild</span>
+                <span class="setting-desc">Adwaita Dark/Light Theme</span>
+              </div>
+              <select id="setting-theme" class="select-box">
+                <option value="dark">Dunkel (Standard)</option>
+                <option value="light">Hell</option>
+                <option value="system">Systemeinstellung folgen</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Keyboard Shortcuts reference -->
+          <div class="settings-group shortcuts-ref">
+            <h3>⌨️ Tastaturkürzel</h3>
+            <div class="shortcuts-grid">
+              <div><kbd>Leertaste</kbd> Start / Pause</div>
+              <div><kbd>R</kbd> Intervall zurücksetzen</div>
+              <div><kbd>S</kbd> Phase überspringen</div>
+              <div><kbd>1</kbd>–<kbd>4</kbd> Tabs wechseln</div>
+              <div><kbd>F</kbd> Fokus-Phase wählen</div>
+              <div><kbd>K</kbd> / <kbd>L</kbd> Pause wählen</div>
+            </div>
+          </div>
+
+          <div class="settings-actions">
+            <button type="button" class="btn-action secondary" id="btn-defaults">Standardwerte</button>
+            <button type="submit" class="btn-action primary">Einstellungen speichern</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <!-- Session Reflection Note Modal -->
+    <div class="modal-backdrop" id="note-modal" style="display: none;">
+      <div class="modal-card">
+        <h3>🎉 Fokus-Block geschafft!</h3>
+        <p class="modal-desc">Möchtest du eine kurze Notiz für diese Session festhalten?</p>
+        <input type="text" id="session-note-input" class="input-text" placeholder="z. B. Authentifizierung abgeschlossen, Refactoring..." maxlength="140">
+        <div class="modal-actions">
+          <button type="button" class="btn-action secondary" id="btn-skip-note">Überspringen</button>
+          <button type="button" class="btn-action primary" id="btn-save-note">Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modern Libadwaita Confirmation Modal -->
+    <div class="modal-backdrop" id="confirm-modal" style="display: none;">
+      <div class="modal-card confirm-card">
+        <div class="confirm-icon-wrapper" id="confirm-icon">⚠️</div>
+        <h3 id="confirm-title" class="confirm-title">Bestätigung erforderlich</h3>
+        <p class="modal-desc confirm-message" id="confirm-message">Möchtest du fortfahren?</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-action secondary" id="btn-confirm-cancel">Abbrechen</button>
+          <button type="button" class="btn-action primary" id="btn-confirm-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Status / Toast bar -->
+    <div class="toast-container" id="toast-container"></div>
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

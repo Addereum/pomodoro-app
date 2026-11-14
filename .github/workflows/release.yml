@@ -1,0 +1,51 @@
+name: Release Addereums Pomodoro
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Berechtigungen für GitHub Releases
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    # 🔒 SICHERHEITS-SCHUTZ:
+    # Nur der Benutzer "addereum" darf Releases erstellen und veröffentlichen!
+    if: github.actor == 'addereum'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Systemabhängigkeiten installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm zip imagemagick
+
+      - name: Alle Installer-Pakete bauen (Linux & Windows)
+        run: |
+          chmod +x installers/*.sh installers/windows/*.py
+          ./installers/build-all.sh
+
+      - name: GitHub Release erstellen & Pakete anhängen
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Addereums Pomodoro ${{ github.ref_name }}"
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          make_latest: true
+          generate_release_notes: true
+          files: |
+            installers/dist/*.deb
+            installers/dist/*.rpm
+            installers/dist/*.tar.gz
+            installers/dist/*.zip
+            installers/dist/SHA256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
