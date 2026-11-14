@@ -11,6 +11,30 @@ Repository: [https://github.com/addereum/pomodoro-app](https://github.com/addere
 
 ---
 
+> [!IMPORTANT]
+> ### 🐧 Entwickelt für Linux First!
+> **Addereums Pomodoro** wurde von Grund auf nach **„Linux First“**-Prinzipien für moderne Linux-Desktops (Wayland, GNOME, GTK4 & Libadwaita) entwickelt.
+>
+> **Unterstützte & getestete Distributionen:**
+> - 🎩 **Fedora Linux** (Workstation, Silverblue)
+> - 🟠 **Ubuntu** & **Debian**
+> - 🟢 **Linux Mint** & **Pop!_OS**
+> - 🔵 **Arch Linux** & **Manjaro**
+> - 🦎 **openSUSE** (Tumbleweed / Leap)
+> - 🏢 **RHEL** / CentOS Stream / Rocky Linux / AlmaLinux
+> - 📦 Beliebige Linux-Distributionen via **Universal Portable Tarball** oder `./installers/install-linux.sh`
+>
+> ---
+>
+> ### 🪟 Hinweis zu Windows
+> Neben der Linux-Hauptversion stellen wir auch fertige Windows-Pakete (`Setup.exe`, `Pomodoro.exe` und `.zip`) bereit. Da der Entwicklungsfokus primär auf Linux liegt, können unter Windows gelegentlich kleinere Fehler oder Abweichungen auftreten.
+>
+> **Fehler gefunden oder Verbesserungsideen?**
+> - Bitte gerne einen Fehlerbericht unter [GitHub Issues](https://github.com/addereum/pomodoro-app/issues) melden!
+> - Oder noch besser: **Projekt forken, Problem beheben (fixen), testen und einen Pull Request (PR) öffnen!** Community-Beiträge sind jederzeit sehr willkommen! ❤️
+
+---
+
 ## ✨ Features
 
 1. **Präzise, driftfreie Timer-Logik**
@@ -97,14 +121,15 @@ Falls du die App lieber direkt in Firefox oder Chrome im Browser nutzen möchtes
 
 ## 📦 Distribution & Installer (`installers/`)
 
-Fertig gebaute Pakete für Ubuntu, Debian, Fedora und andere Linux-Distributionen befinden sich in [`installers/dist/`](file:///home/lukas/Apps/pomodoro-app/installers/dist):
+Fertig gebaute Pakete befinden sich in [`installers/dist/`](file:///home/lukas/Apps/pomodoro-app/installers/dist) bzw. auf der [GitHub Releases-Seite](https://github.com/addereum/pomodoro-app/releases):
 
-- **Ubuntu / Debian (.deb):** `sudo apt install ./installers/dist/pomodoro-app_1.0.0_all.deb`
-- **Fedora / RHEL (.rpm):** `sudo dnf install ./installers/dist/pomodoro-app-1.0.0-*.rpm`
+- **Ubuntu / Debian / Pop!_OS / Mint (.deb):** `sudo apt install ./installers/dist/pomodoro-app_1.0.0_all.deb`
+- **Fedora / RHEL / CentOS / openSUSE (.rpm):** `sudo dnf install ./installers/dist/pomodoro-app-1.0.0-*.rpm`
 - **Universal Linux Portable:** `installers/dist/pomodoro-app-1.0.0-linux-x86_64-portable.tar.gz`
-- **Universal Shell-Installer:** `./installers/install-linux.sh` (auch ohne Root/Sudo)
+- **Universal Shell-Installer:** `./installers/install-linux.sh` (benutzerweit ohne Root oder systemweit mit Sudo)
+- **Windows 10 / 11:** `installers/dist/pomodoro-app-1.0.0-windows-x64.zip` bzw. `Addereums-Pomodoro-Setup.exe`
 
-Alle Details und Build-Skripte findest du im [Installers README](file:///home/lukas/Apps/pomodoro-app/installers/README.md).
+Alle Details und Skripte findest du im [Installers README](file:///home/lukas/Apps/pomodoro-app/installers/README.md).
 
 ---
 
