@@ -18,6 +18,8 @@ export const DEFAULT_SETTINGS = {
   ambientSound: 'none',
   ambientVolume: 50,
   desktopNotifications: true,
+  autoDnd: true,
+  closeToTray: true,
   theme: 'dark' // 'dark' | 'light' | 'system'
 };
 

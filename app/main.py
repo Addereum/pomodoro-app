@@ -2,18 +2,21 @@
 """
 Pomodoro Native Desktop Host for Fedora / GNOME
 Frameless window with custom integrated Titlebar & native Wayland drag support.
+Supports GNOME Do-Not-Disturb (DND) mode and System Tray / AppIndicator companion.
 """
 
 import sys
 import os
 import json
 import subprocess
+import atexit
 from pathlib import Path
 
 # Ensure paths
 APP_DIR = Path(__file__).resolve().parent
 WEB_INDEX = APP_DIR / "web" / "index.html"
 ICON_PATH = APP_DIR / "icon.svg"
+ICON_PNG = APP_DIR / "icon.png"
 
 try:
     import gi
@@ -91,6 +94,123 @@ window.pomodoro-window {
 """
 
 
+class DndManager:
+    """Manages GNOME desktop notification banners (Do Not Disturb) during focus phases."""
+    def __init__(self):
+        self.settings = None
+        self.original_show_banners = None
+        self.is_dnd_active = False
+        try:
+            source = Gio.SettingsSchemaSource.get_default()
+            if source and source.lookup("org.gnome.desktop.notifications", True):
+                self.settings = Gio.Settings.new("org.gnome.desktop.notifications")
+                self.original_show_banners = self.settings.get_boolean("show-banners")
+        except Exception as e:
+            print(f"[DND] GNOME notifications schema not accessible: {e}", file=sys.stderr)
+
+    def set_dnd(self, enable: bool):
+        if not self.settings:
+            return
+        try:
+            if enable and not self.is_dnd_active:
+                self.original_show_banners = self.settings.get_boolean("show-banners")
+                self.settings.set_boolean("show-banners", False)
+                self.is_dnd_active = True
+            elif not enable and self.is_dnd_active:
+                restore_val = True if self.original_show_banners is None else self.original_show_banners
+                self.settings.set_boolean("show-banners", restore_val)
+                self.is_dnd_active = False
+        except Exception as e:
+            print(f"[DND Error] Could not update show-banners: {e}", file=sys.stderr)
+
+    def cleanup(self):
+        if self.is_dnd_active and self.settings:
+            try:
+                restore_val = True if self.original_show_banners is None else self.original_show_banners
+                self.settings.set_boolean("show-banners", restore_val)
+                self.is_dnd_active = False
+            except Exception:
+                pass
+
+
+class TrayProcessManager:
+    """Spawns and communicates with the isolated Gtk 3.0 AppIndicator tray companion."""
+    def __init__(self, window):
+        self.window = window
+        self.proc = None
+        self.start()
+
+    def start(self):
+        tray_script = APP_DIR / "tray.py"
+        if not tray_script.exists():
+            return
+        try:
+            self.proc = subprocess.Popen(
+                [sys.executable, str(tray_script)],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                bufsize=1
+            )
+            GLib.io_add_watch(
+                self.proc.stdout.fileno(),
+                GLib.IO_IN | GLib.IO_HUP,
+                self.on_stdout
+            )
+        except Exception as e:
+            print(f"[Tray Error] Failed to start tray process: {e}", file=sys.stderr)
+            self.proc = None
+
+    def on_stdout(self, source, condition):
+        if condition & GLib.IO_HUP:
+            return False
+        if not self.proc or not self.proc.stdout:
+            return False
+        try:
+            line = self.proc.stdout.readline()
+            if not line:
+                return False
+            data = json.loads(line.strip())
+            action = data.get("action")
+            self.handle_tray_action(action)
+        except Exception:
+            pass
+        return True
+
+    def handle_tray_action(self, action: str):
+        if action == "toggle_window":
+            if self.window.is_visible():
+                self.window.set_visible(False)
+            else:
+                self.window.set_visible(True)
+                self.window.present()
+        elif action == "toggle_timer":
+            self.window.eval_js("if (window.pomodoroApp) window.pomodoroApp.timer.toggle();")
+        elif action == "skip_phase":
+            self.window.eval_js("if (window.pomodoroApp) window.pomodoroApp.timer.skip();")
+        elif action == "quit":
+            self.window.quit_app()
+
+    def send_update(self, data: dict):
+        if self.proc and self.proc.stdin:
+            try:
+                line = json.dumps(data) + "\n"
+                self.proc.stdin.write(line)
+                self.proc.stdin.flush()
+            except (BrokenPipeError, IOError):
+                self.proc = None
+
+    def stop(self):
+        if self.proc:
+            try:
+                self.send_update({"type": "quit"})
+                self.proc.terminate()
+            except Exception:
+                pass
+            self.proc = None
+
+
 class PomodoroWindow(Adw.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app, title="Addereums Pomodoro")
@@ -102,6 +222,15 @@ class PomodoroWindow(Adw.ApplicationWindow):
         self.add_css_class("pomodoro-window")
 
         self.is_compact = False
+        self.close_to_tray = True
+
+        # Managers
+        self.dnd_manager = DndManager()
+        self.tray_manager = TrayProcessManager(self)
+        atexit.register(self.cleanup)
+
+        # Intercept window close to support "Close to Tray"
+        self.connect("close-request", self.on_close_request)
 
         # Apply Custom Styles
         self.css_provider = Gtk.CssProvider()
@@ -159,7 +288,7 @@ class PomodoroWindow(Adw.ApplicationWindow):
         right_box.append(self.btn_minimize)
 
         self.btn_close = Gtk.Button(label="✕")
-        self.btn_close.set_tooltip_text("Schließen")
+        self.btn_close.set_tooltip_text("Schließen (In den System-Tray)")
         self.btn_close.add_css_class("titlebar-btn")
         self.btn_close.add_css_class("close")
         self.btn_close.connect("clicked", lambda b: self.close())
@@ -167,7 +296,7 @@ class PomodoroWindow(Adw.ApplicationWindow):
 
         self.titlebar_box.append(right_box)
 
-        # Right-click gesture on custom titlebar triggers GNOME window menu ("Immer im Vordergrund")
+        # Right-click gesture on custom titlebar triggers GNOME window menu
         right_click_gesture = Gtk.GestureClick.new()
         right_click_gesture.set_button(3)
         right_click_gesture.connect("pressed", self.on_titlebar_right_click)
@@ -200,6 +329,38 @@ class PomodoroWindow(Adw.ApplicationWindow):
         self.style_manager = Adw.StyleManager.get_default()
         self.style_manager.connect("notify::dark", self.on_theme_changed)
 
+    def on_close_request(self, window):
+        """Intercept window close to minimize to tray if enabled"""
+        if self.close_to_tray:
+            self.set_visible(False)
+            return True  # Stop default close, window stays alive in tray
+        self.cleanup()
+        return False
+
+    def eval_js(self, js_code: str):
+        """Execute JavaScript inside the WebKit WebView safely"""
+        try:
+            self.web_view.evaluate_javascript(js_code, -1, None, None, None, None, None)
+        except Exception:
+            pass
+
+    def quit_app(self):
+        """Perform full application exit, stopping tray and restoring system state"""
+        self.close_to_tray = False
+        self.cleanup()
+        app = self.get_application()
+        if app:
+            app.quit()
+        else:
+            self.close()
+
+    def cleanup(self):
+        """Restore GNOME banners and stop tray process"""
+        if hasattr(self, "dnd_manager") and self.dnd_manager:
+            self.dnd_manager.cleanup()
+        if hasattr(self, "tray_manager") and self.tray_manager:
+            self.tray_manager.stop()
+
     def on_theme_changed(self, style_manager, param):
         is_dark = style_manager.get_dark()
         if is_dark:
@@ -208,11 +369,7 @@ class PomodoroWindow(Adw.ApplicationWindow):
             self.titlebar_box.add_css_class("light")
 
         theme_str = "dark" if is_dark else "light"
-        js_code = f"if (window.pomodoroApp) window.pomodoroApp.settings.applyTheme('{theme_str}');"
-        try:
-            self.web_view.evaluate_javascript(js_code, -1, None, None, None, None, None)
-        except Exception:
-            pass
+        self.eval_js(f"if (window.pomodoroApp) window.pomodoroApp.settings.applyTheme('{theme_str}');")
 
     def on_script_message(self, content_manager, js_result):
         try:
@@ -261,6 +418,16 @@ class PomodoroWindow(Adw.ApplicationWindow):
             elif action == "close":
                 self.close()
 
+            elif action == "set_dnd":
+                enabled = bool(data.get("enabled", False))
+                self.dnd_manager.set_dnd(enabled)
+
+            elif action == "set_close_to_tray":
+                self.close_to_tray = bool(data.get("closeToTray", True))
+
+            elif action == "timer_status":
+                self.tray_manager.send_update(data)
+
         except Exception as e:
             print(f"[Bridge Error] Failed to process message: {e}", file=sys.stderr)
 
@@ -292,11 +459,7 @@ class PomodoroWindow(Adw.ApplicationWindow):
             js_code = "if (window.pomodoroApp) window.pomodoroApp.toggleCompactMode(false, false);"
 
         self.queue_resize()
-
-        try:
-            self.web_view.evaluate_javascript(js_code, -1, None, None, None, None, None)
-        except Exception:
-            pass
+        self.eval_js(js_code)
 
     def send_system_notification(self, title, body, urgency="normal"):
         """Show native desktop notification on Fedora / GNOME"""

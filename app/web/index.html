@@ -271,6 +271,7 @@
           <div class="history-header">
             <h3>Kürzlich abgeschlossene Sessions</h3>
             <div class="history-header-actions">
+              <button class="btn-text" id="btn-export-markdown" title="Tagesbericht im Markdown-Format kopieren (für Standup & GitHub)">📋 Standup (MD)</button>
               <button class="btn-text" id="btn-export-csv" title="Als CSV-Tabelle exportieren">📥 CSV</button>
               <button class="btn-text" id="btn-export-json" title="Als JSON-Daten exportieren">📥 JSON</button>
               <button class="btn-text danger" id="btn-reset-stats">Reset</button>
@@ -400,6 +401,20 @@
                 <span class="toggle-desc">Native Benachrichtigung auf Fedora / GNOME anzeigen</span>
               </div>
               <input type="checkbox" id="setting-notify-desktop" class="switch" checked>
+            </label>
+            <label class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-title">🔕 Nicht-Stören-Modus (DND)</span>
+                <span class="toggle-desc">Desktop-Benachrichtigungen während Fokus-Phasen automatisch stummschalten</span>
+              </div>
+              <input type="checkbox" id="setting-auto-dnd" class="switch" checked>
+            </label>
+            <label class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-title">🍅 In den System-Tray minimieren</span>
+                <span class="toggle-desc">Lässt die App im Panel weiterlaufen, wenn das Fenster geschlossen wird</span>
+              </div>
+              <input type="checkbox" id="setting-close-to-tray" class="switch" checked>
             </label>
             <div class="setting-row">
               <div class="setting-info">

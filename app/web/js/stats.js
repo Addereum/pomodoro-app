@@ -113,6 +113,60 @@ export class StatsTracker {
     URL.revokeObjectURL(url);
   }
 
+  generateMarkdownReport(taskList = []) {
+    const today = new Date();
+    const todayKey = this.formatDateKey(today);
+    const dateFormatted = `${String(today.getDate()).padStart(2, '0')}.${String(today.getMonth() + 1).padStart(2, '0')}.${today.getFullYear()}`;
+    const todayLogs = this.logs.filter(l => l.date === todayKey && l.phase === 'focus');
+
+    const totalMinutes = todayLogs.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    const streak = this.getStreakDays();
+
+    let md = `### 🍅 Addereums Pomodoro – Tagesbericht (${dateFormatted})\n\n`;
+    md += `> **Produktivität:** ${todayLogs.length} Pomodoro(s) | **Fokuszeit:** ${timeStr} | **Streak:** ${streak} Tag(e)\n\n`;
+
+    // Tasks Section
+    if (taskList && taskList.length > 0) {
+      md += `#### 📋 Aufgabenübersicht\n`;
+      const completedTasks = taskList.filter(t => t.completed);
+      const openTasks = taskList.filter(t => !t.completed);
+
+      if (completedTasks.length > 0) {
+        completedTasks.forEach(t => {
+          md += `- [x] **${t.title}** (${t.completedPomodoros}/${t.estimatedPomodoros} 🍅)\n`;
+        });
+      }
+      if (openTasks.length > 0) {
+        openTasks.forEach(t => {
+          md += `- [ ] ${t.title} (${t.completedPomodoros}/${t.estimatedPomodoros} 🍅)\n`;
+        });
+      }
+      md += `\n`;
+    }
+
+    // Sessions Timeline
+    if (todayLogs.length > 0) {
+      md += `#### ⏱️ Heutige Fokus-Sessions\n`;
+      todayLogs.slice().reverse().forEach((log, index) => {
+        const d = new Date(log.timestamp);
+        const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        let line = `${index + 1}. **${time} Uhr** – ${log.durationMinutes} Min. Fokus`;
+        if (log.taskTitle) line += ` | *${log.taskTitle}*`;
+        if (log.note) line += ` (*Notiz: „${log.note}“*)`;
+        md += `- ${line}\n`;
+      });
+      md += `\n`;
+    } else {
+      md += `*Heute wurden noch keine Fokus-Sessions abgeschlossen.*\n\n`;
+    }
+
+    md += `---\n*Generiert mit [Addereums Pomodoro](https://github.com/addereum/pomodoro-app)*\n`;
+    return md;
+  }
+
   formatDateKey(dateObj) {
     const y = dateObj.getFullYear();
     const m = String(dateObj.getMonth() + 1).padStart(2, '0');

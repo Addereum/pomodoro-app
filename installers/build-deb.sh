@@ -36,7 +36,7 @@ Architecture: all
 Maintainer: addereum <https://github.com/addereum>
 Homepage: https://github.com/addereum/pomodoro-app
 Depends: python3, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-webkit-6.0, libnotify-bin
-Recommends: sound-theme-freedesktop
+Recommends: sound-theme-freedesktop, gir1.2-ayatanaappindicator3-0.1, gir1.2-gtk-3.0
 Description: Addereums Pomodoro – Moderner Fokus- & Produktivitaets-Timer
  Schlanker, nativer Pomodoro-Timer mit GTK4, Libadwaita und WebKitGTK.
  Bietet randloses Design, Soundeffekte, prozedurales Umgebungsrauschen,

@@ -35,6 +35,7 @@ License:        MIT
 URL:            https://github.com/addereum/pomodoro-app
 BuildArch:      noarch
 Requires:       python3, python3-gobject, gtk4, libadwaita, webkitgtk6.0, libnotify
+Recommends:     libayatana-appindicator-gtk3, gtk3
 
 %description
 Addereums Pomodoro: Schlanker, nativer Pomodoro-Timer mit GTK4, Libadwaita und WebKitGTK.

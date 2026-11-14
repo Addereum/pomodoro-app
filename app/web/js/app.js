@@ -120,6 +120,7 @@ class App {
     this.btnResetStats = document.getElementById('btn-reset-stats');
     this.btnExportCsv = document.getElementById('btn-export-csv');
     this.btnExportJson = document.getElementById('btn-export-json');
+    this.btnExportMarkdown = document.getElementById('btn-export-markdown');
 
     // Settings Elements
     this.settingsForm = document.getElementById('settings-form');
@@ -138,6 +139,8 @@ class App {
     this.sliderSoundVolume = document.getElementById('setting-sound-volume');
     this.volumeLabel = document.getElementById('volume-label');
     this.inputNotifyDesktop = document.getElementById('setting-notify-desktop');
+    this.inputAutoDnd = document.getElementById('setting-auto-dnd');
+    this.inputCloseToTray = document.getElementById('setting-close-to-tray');
     this.selectTheme = document.getElementById('setting-theme');
     this.btnDefaults = document.getElementById('btn-defaults');
 
@@ -332,6 +335,24 @@ class App {
       });
     }
 
+    // Markdown / Standup Report Export
+    if (this.btnExportMarkdown) {
+      this.btnExportMarkdown.addEventListener('click', () => {
+        const md = this.stats.generateMarkdownReport(this.tasks.getTasks());
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(md)
+            .then(() => {
+              this.showToast('📋 Standup-Bericht in Zwischenablage kopiert!');
+            })
+            .catch(() => {
+              this.downloadMarkdownFile(md);
+            });
+        } else {
+          this.downloadMarkdownFile(md);
+        }
+      });
+    }
+
     // Session Note Modal Handlers
     if (this.btnSaveNote) {
       this.btnSaveNote.addEventListener('click', () => {
@@ -495,10 +516,15 @@ class App {
     const offset = this.CIRCUMFERENCE * (1 - data.progress);
     this.timerProgress.style.strokeDashoffset = offset;
 
-    // 3. Document / Window Title
+    // 3. Document / Window Title & Bridge Status
     const phaseNames = { focus: 'Fokus', shortBreak: 'Kurze Pause', longBreak: 'Lange Pause' };
     const phaseLabel = phaseNames[data.phase] || 'Fokus';
     this.bridge.updateTitle(`(${data.formattedTime}) ${phaseLabel} - Addereums Pomodoro`);
+    this.bridge.updateTimerStatus({
+      phase: data.phase,
+      formattedTime: data.formattedTime,
+      isRunning: this.timer.isRunning
+    });
   }
 
   handleTimerStateChange(data) {
@@ -527,6 +553,11 @@ class App {
     this.iconPlay.style.display = isRunning ? 'none' : 'block';
     this.iconPause.style.display = isRunning ? 'block' : 'none';
     this.btnToggleLabel.textContent = isRunning ? 'Pause' : (data.status === 'paused' ? 'Weiter' : 'Starten');
+
+    // 🔕 Automatischer Nicht-Stören-Modus (DND)
+    if (this.settings.get().autoDnd) {
+      this.bridge.setDnd(data.phase === 'focus' && isRunning);
+    }
 
     // Compact Play/Pause icons
     if (this.compactIconPlay && this.compactIconPause) {
@@ -810,11 +841,17 @@ class App {
     }
 
     this.inputNotifyDesktop.checked = !!cfg.desktopNotifications;
+    if (this.inputAutoDnd) {
+      this.inputAutoDnd.checked = cfg.autoDnd !== undefined ? !!cfg.autoDnd : true;
+    }
+    if (this.inputCloseToTray) {
+      this.inputCloseToTray.checked = cfg.closeToTray !== undefined ? !!cfg.closeToTray : true;
+    }
     this.selectTheme.value = cfg.theme;
   }
 
   saveSettingsFromForm() {
-    this.settings.save({
+    const newSettings = {
       focusMinutes: parseInt(this.inputFocusTime.value, 10),
       shortBreakMinutes: parseInt(this.inputShortBreak.value, 10),
       longBreakMinutes: parseInt(this.inputLongBreak.value, 10),
@@ -827,8 +864,26 @@ class App {
       soundType: this.selectSoundType.value,
       soundVolume: parseInt(this.sliderSoundVolume.value, 10),
       desktopNotifications: this.inputNotifyDesktop.checked,
+      autoDnd: this.inputAutoDnd ? this.inputAutoDnd.checked : true,
+      closeToTray: this.inputCloseToTray ? this.inputCloseToTray.checked : true,
       theme: this.selectTheme.value
-    });
+    };
+
+    this.settings.save(newSettings);
+    this.bridge.updateCloseToTray(newSettings.closeToTray);
+  }
+
+  downloadMarkdownFile(content) {
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `pomodoro-standup-${this.stats.formatDateKey(new Date())}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    this.showToast('📥 Markdown-Bericht heruntergeladen');
   }
 
   /**
@@ -941,6 +996,7 @@ class App {
     this.refreshActiveTaskUI();
     this.refreshQuickSummary();
     this.populateSettingsForm();
+    this.bridge.updateCloseToTray(this.settings.get().closeToTray);
     this.timer.emitStateChange();
     this.timer.emitTick();
   }

@@ -112,4 +112,33 @@ export class DesktopBridge {
       });
     }
   }
+
+  setDnd(enabled) {
+    if (this.isNativeHost) {
+      this.postMessage({
+        type: 'set_dnd',
+        enabled: !!enabled
+      });
+    }
+  }
+
+  updateTimerStatus(data) {
+    if (this.isNativeHost) {
+      this.postMessage({
+        type: 'timer_status',
+        phase: data.phase,
+        formattedTime: data.formattedTime,
+        isRunning: !!data.isRunning
+      });
+    }
+  }
+
+  updateCloseToTray(closeToTray) {
+    if (this.isNativeHost) {
+      this.postMessage({
+        type: 'set_close_to_tray',
+        closeToTray: !!closeToTray
+      });
+    }
+  }
 }
