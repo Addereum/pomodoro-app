@@ -182,6 +182,18 @@ export class DesktopBridge {
     }
   }
 
+  pickCustomAudioFile() {
+    if (window.AndroidBridge && typeof window.AndroidBridge.pickCustomAudioFile === 'function') {
+      try {
+        window.AndroidBridge.pickCustomAudioFile();
+        return true;
+      } catch (e) {
+        console.warn('AndroidBridge pickCustomAudioFile error:', e);
+      }
+    }
+    return false;
+  }
+
   updateCloseToTray(closeToTray) {
     if (this.isNativeHost) {
       this.postMessage({

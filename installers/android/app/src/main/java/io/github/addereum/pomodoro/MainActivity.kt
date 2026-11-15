@@ -14,11 +14,14 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.provider.OpenableColumns
 import android.provider.Settings
+import android.util.Base64
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.webkit.*
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.webkit.WebViewAssetLoader
@@ -36,6 +39,10 @@ class MainActivity : Activity() {
     private lateinit var webView: WebView
     private val CHANNEL_ID = "pomodoro_timer_channel"
     private val NOTIFICATION_ID = 1001
+
+    private val REQUEST_CODE_AUDIO = 2001
+    private val REQUEST_CODE_PERMISSION_AUDIO = 2002
+    private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
 
     private val timerActionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -101,7 +108,18 @@ class MainActivity : Activity() {
             }
         }
 
-        webView.webChromeClient = WebChromeClient()
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onShowFileChooser(
+                view: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
+            ): Boolean {
+                fileUploadCallback?.onReceiveValue(null)
+                fileUploadCallback = filePathCallback
+                checkAudioPermissionAndPick()
+                return true
+            }
+        }
 
         // Load index.html through local asset loader
         webView.loadUrl("https://appassets.androidplatform.net/assets/web/index.html")
@@ -304,6 +322,104 @@ class MainActivity : Activity() {
             activity.runOnUiThread {
                 activity.setKeepScreenOnFlag(keepOn)
             }
+        }
+
+        @JavascriptInterface
+        fun pickCustomAudioFile() {
+            activity.runOnUiThread {
+                activity.checkAudioPermissionAndPick()
+            }
+        }
+    }
+
+    fun checkAudioPermissionAndPick() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(android.Manifest.permission.READ_MEDIA_AUDIO), REQUEST_CODE_PERMISSION_AUDIO)
+                return
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), REQUEST_CODE_PERMISSION_AUDIO)
+                return
+            }
+        }
+        launchAudioPicker()
+    }
+
+    private fun launchAudioPicker() {
+        try {
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "audio/*"
+                addCategory(Intent.CATEGORY_OPENABLE)
+            }
+            startActivityForResult(Intent.createChooser(intent, "Fokus-Sound auswählen"), REQUEST_CODE_AUDIO)
+        } catch (e: Exception) {
+            fileUploadCallback?.onReceiveValue(null)
+            fileUploadCallback = null
+            Toast.makeText(this, "Kein Dateimanager gefunden", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_PERMISSION_AUDIO) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                launchAudioPicker()
+            } else {
+                fileUploadCallback?.onReceiveValue(null)
+                fileUploadCallback = null
+                Toast.makeText(this, "Berechtigung für Zugriff auf Audiodateien erforderlich", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_AUDIO) {
+            val uri = data?.data
+            if (resultCode == RESULT_OK && uri != null) {
+                fileUploadCallback?.onReceiveValue(arrayOf(uri))
+                fileUploadCallback = null
+                processSelectedAudioUri(uri)
+            } else {
+                fileUploadCallback?.onReceiveValue(null)
+                fileUploadCallback = null
+            }
+        }
+    }
+
+    private fun processSelectedAudioUri(uri: Uri) {
+        try {
+            var displayName = "custom_sound.mp3"
+            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex != -1) {
+                        displayName = cursor.getString(nameIndex)
+                    }
+                }
+            }
+
+            val inputStream = contentResolver.openInputStream(uri)
+            val bytes = inputStream?.readBytes()
+            inputStream?.close()
+
+            if (bytes != null && bytes.isNotEmpty()) {
+                val mimeType = contentResolver.getType(uri) ?: "audio/mpeg"
+                val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                val dataUrl = "data:$mimeType;base64,$base64"
+                val safeName = displayName.replace("'", "\\'")
+
+                runOnUiThread {
+                    webView.evaluateJavascript(
+                        "if (window.pomodoroApp) window.pomodoroApp.handleCustomAudioLoaded('$dataUrl', '$safeName');",
+                        null
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Fehler beim Laden der Audiodatei", Toast.LENGTH_LONG).show()
         }
     }
 }

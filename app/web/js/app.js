@@ -447,6 +447,9 @@ class App {
 
     if (this.btnSelectCustomSound && this.inputCustomSound) {
       this.btnSelectCustomSound.addEventListener('click', () => {
+        if (this.bridge.pickCustomAudioFile()) {
+          return;
+        }
         this.inputCustomSound.click();
       });
 
@@ -456,19 +459,7 @@ class App {
 
         const reader = new FileReader();
         reader.onload = () => {
-          const dataUrl = reader.result;
-          try {
-            localStorage.setItem('pomodoro_custom_sound', dataUrl);
-            localStorage.setItem('pomodoro_custom_sound_name', file.name);
-            this.sound.setCustomAudio(dataUrl);
-            if (this.customSoundName) {
-              this.customSoundName.textContent = file.name;
-            }
-            this.showToast(`Eigener Sound geladen: ${file.name}`);
-            this.sound.play('custom');
-          } catch (err) {
-            this.showToast('⚠️ Audiodatei zu groß für Speicher');
-          }
+          this.handleCustomAudioLoaded(reader.result, file.name);
         };
         reader.readAsDataURL(file);
       });
@@ -982,6 +973,21 @@ class App {
 
     this.settings.save(newSettings);
     this.bridge.updateCloseToTray(newSettings.closeToTray);
+  }
+
+  handleCustomAudioLoaded(dataUrl, fileName) {
+    try {
+      localStorage.setItem('pomodoro_custom_sound', dataUrl);
+      localStorage.setItem('pomodoro_custom_sound_name', fileName);
+      this.sound.setCustomAudio(dataUrl);
+      if (this.customSoundName) {
+        this.customSoundName.textContent = fileName;
+      }
+      this.showToast(`Eigener Sound geladen: ${fileName}`);
+      this.sound.play('custom');
+    } catch (err) {
+      this.showToast('⚠️ Audiodatei zu groß für Speicher (max. ~4MB)');
+    }
   }
 
   downloadMarkdownFile(content) {
