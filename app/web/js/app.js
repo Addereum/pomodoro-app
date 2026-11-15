@@ -141,6 +141,8 @@ class App {
     this.inputNotifyDesktop = document.getElementById('setting-notify-desktop');
     this.inputAutoDnd = document.getElementById('setting-auto-dnd');
     this.inputCloseToTray = document.getElementById('setting-close-to-tray');
+    this.rowBatteryOpt = document.getElementById('row-battery-opt');
+    this.btnBatteryOpt = document.getElementById('btn-battery-opt');
     this.selectTheme = document.getElementById('setting-theme');
     this.btnDefaults = document.getElementById('btn-defaults');
 
@@ -420,6 +422,15 @@ class App {
         this.ambient.start();
       }
     });
+
+    if (this.btnBatteryOpt) {
+      if (window.AndroidBridge) {
+        if (this.rowBatteryOpt) this.rowBatteryOpt.style.display = 'flex';
+      }
+      this.btnBatteryOpt.addEventListener('click', () => {
+        this.bridge.requestBatteryOptimization();
+      });
+    }
 
     this.settings.onUpdate = (cfg) => {
       this.timer.setDurations({

@@ -123,6 +123,16 @@ export class DesktopBridge {
   }
 
   updateTimerStatus(data) {
+    // 1. Android Notification Bar Bridge
+    if (window.AndroidBridge && typeof window.AndroidBridge.updateTimerStatus === 'function') {
+      try {
+        window.AndroidBridge.updateTimerStatus(data.phase, data.formattedTime, !!data.isRunning);
+      } catch (e) {
+        console.warn('AndroidBridge error:', e);
+      }
+    }
+
+    // 2. Desktop Native Host
     if (this.isNativeHost) {
       this.postMessage({
         type: 'timer_status',
@@ -130,6 +140,16 @@ export class DesktopBridge {
         formattedTime: data.formattedTime,
         isRunning: !!data.isRunning
       });
+    }
+  }
+
+  requestBatteryOptimization() {
+    if (window.AndroidBridge && typeof window.AndroidBridge.requestBatteryOptimization === 'function') {
+      try {
+        window.AndroidBridge.requestBatteryOptimization();
+      } catch (e) {
+        console.warn('AndroidBridge battery error:', e);
+      }
     }
   }
 
