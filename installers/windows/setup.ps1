@@ -191,7 +191,8 @@ $btnInstall.Add_Click({
         $UninstallKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\AddereumsPomodoro"
         New-Item -Path $UninstallKey -Force | Out-Null
         Set-ItemProperty -Path $UninstallKey -Name "DisplayName" -Value "Addereums Pomodoro"
-        Set-ItemProperty -Path $UninstallKey -Name "DisplayVersion" -Value "1.1.1"
+        $AppVer = if ($env:APP_VERSION) { $env:APP_VERSION } else { "1.3.7" }
+        Set-ItemProperty -Path $UninstallKey -Name "DisplayVersion" -Value $AppVer
         Set-ItemProperty -Path $UninstallKey -Name "Publisher" -Value "addereum"
         Set-ItemProperty -Path $UninstallKey -Name "HelpLink" -Value "https://github.com/addereum/pomodoro-app"
         Set-ItemProperty -Path $UninstallKey -Name "DisplayIcon" -Value "$IconTarget"

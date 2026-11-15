@@ -26,7 +26,7 @@ mkdir -p "${RESOURCES_DIR}/app"
 
 # 1. Info.plist kopieren & Version aktualisieren
 cp "${SCRIPT_DIR}/Info.plist" "${CONTENTS_DIR}/Info.plist"
-sed -i "s/1.1.1/${VERSION}/g" "${CONTENTS_DIR}/Info.plist" 2>/dev/null || sed -i '' "s/1.1.1/${VERSION}/g" "${CONTENTS_DIR}/Info.plist" 2>/dev/null || true
+sed -i -E "s/<string>[0-9]+\.[0-9]+\.[0-9]+<\/string>/<string>${VERSION}<\/string>/g" "${CONTENTS_DIR}/Info.plist" 2>/dev/null || sed -i "" -E "s/<string>[0-9]+\.[0-9]+\.[0-9]+<\/string>/<string>${VERSION}<\/string>/g" "${CONTENTS_DIR}/Info.plist" 2>/dev/null || true
 
 # 2. Launcher-Skript erstellen
 cat << 'EOF' > "${MACOS_DIR}/${APP_NAME}"

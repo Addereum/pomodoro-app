@@ -73,7 +73,9 @@ jobs:
       - name: Inno Setup Single-File Installer kompilieren
         run: |
           $ver = "${{ github.ref_name }}".TrimStart('v')
+          (Get-Content installers/windows/pomodoro-setup.iss) -replace 'MyAppVersion ".*"', "MyAppVersion `"$ver`"" | Set-Content installers/windows/pomodoro-setup.iss
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DMyAppVersion=$ver" installers/windows/pomodoro-setup.iss
+          Get-ChildItem installers/dist/*.exe
 
       - name: Windows Setup (.exe) hochladen
         uses: actions/upload-artifact@v4
