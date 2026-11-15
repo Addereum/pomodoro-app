@@ -56,6 +56,11 @@ class MainActivity : Activity() {
         webView = WebView(this)
         setContentView(webView)
 
+        // Disable native overscroll bouncing and scrollbars
+        webView.overScrollMode = View.OVER_SCROLL_NEVER
+        webView.isVerticalScrollBarEnabled = false
+        webView.isHorizontalScrollBarEnabled = false
+
         val settings = webView.settings
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
@@ -68,6 +73,9 @@ class MainActivity : Activity() {
         settings.useWideViewPort = true
         settings.loadWithOverviewMode = true
         settings.cacheMode = WebSettings.LOAD_DEFAULT
+        settings.setSupportZoom(false)
+        settings.builtInZoomControls = false
+        settings.displayZoomControls = false
 
         // Expose Android Bridge to JavaScript
         webView.addJavascriptInterface(WebAppInterface(this), "AndroidBridge")
