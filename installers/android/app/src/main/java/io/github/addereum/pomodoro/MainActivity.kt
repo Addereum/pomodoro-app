@@ -1,23 +1,22 @@
 package io.github.addereum.pomodoro
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.webkit.*
-import androidx.appcompat.app.AppCompatActivity
+import androidx.webkit.WebViewAssetLoader
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : Activity() {
 
     private lateinit var webView: WebView
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        hideSystemUI()
 
         webView = WebView(this)
         setContentView(webView)
@@ -28,21 +27,40 @@ class MainActivity : AppCompatActivity() {
         settings.databaseEnabled = true
         settings.allowFileAccess = true
         settings.allowContentAccess = true
+        settings.allowFileAccessFromFileURLs = true
+        settings.allowUniversalAccessFromFileURLs = true
         settings.mediaPlaybackRequiresUserGesture = false
         settings.useWideViewPort = true
         settings.loadWithOverviewMode = true
         settings.cacheMode = WebSettings.LOAD_DEFAULT
 
+        // Google WebViewAssetLoader: Serves local assets via virtual HTTPS domain.
+        // This resolves CORS restrictions for JavaScript ES6 modules (<script type="module">)
+        // and enables full Web Audio API support without requiring any network permissions.
+        val assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
+
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                return false
+            override fun shouldInterceptRequest(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): WebResourceResponse? {
+                return request?.url?.let { assetLoader.shouldInterceptRequest(it) }
             }
         }
 
         webView.webChromeClient = WebChromeClient()
 
-        // Load offline web app from local assets
-        webView.loadUrl("file:///android_asset/web/index.html")
+        // Load index.html through local asset loader
+        webView.loadUrl("https://appassets.androidplatform.net/assets/web/index.html")
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            hideSystemUI()
+        }
     }
 
     private fun hideSystemUI() {
