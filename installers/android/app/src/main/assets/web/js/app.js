@@ -203,7 +203,10 @@ class App {
     }
 
     // Timer Controls
-    this.btnToggle.addEventListener('click', () => this.timer.toggle());
+    this.btnToggle.addEventListener('click', () => {
+      this.bridge.vibrate('click');
+      this.timer.toggle();
+    });
     this.btnReset.addEventListener('click', () => this.timer.reset());
     this.btnSkip.addEventListener('click', async () => {
       const confirmed = await this.showConfirm({
@@ -688,21 +691,17 @@ class App {
     // 4. Audio notification
     this.sound.play();
 
-    // 5. Desktop Notification
+    // 5. Desktop Notification & Android Alarm Channel Notification
+    const isFocus = info.finishedPhase === 'focus';
+    const notifTitle = isFocus ? '🎉 Fokus-Session abgeschlossen!' : '⏰ Pause beendet!';
+    const notifBody = isFocus
+      ? `Gut gemacht! Zeit für eine ${info.nextPhase === 'longBreak' ? 'lange Pause' : 'kurze Pause'}.${activeTask ? ` zu "${activeTask.title}"` : ''}`
+      : 'Bereit für den nächsten Fokus-Block? Weiter geht\'s!';
+
+    this.bridge.triggerPhaseComplete(info.finishedPhase, notifTitle, notifBody);
+
     if (cfg.desktopNotifications) {
-      if (info.finishedPhase === 'focus') {
-        const nextBreakType = info.nextPhase === 'longBreak' ? 'lange Pause' : 'kurze Pause';
-        const taskInfo = activeTask ? ` zu "${activeTask.title}"` : '';
-        this.bridge.sendNotification(
-          '🎉 Fokus-Session abgeschlossen!',
-          `Gut gemacht! Zeit für eine ${nextBreakType}.${taskInfo}`
-        );
-      } else {
-        this.bridge.sendNotification(
-          '⏰ Pause beendet!',
-          'Bereit für den nächsten Fokus-Block? Weiter geht\'s!'
-        );
-      }
+      this.bridge.sendNotification(notifTitle, notifBody);
     }
 
     this.showToast(info.finishedPhase === 'focus' ? 'Fokus-Block abgeschlossen!' : 'Pause beendet!');

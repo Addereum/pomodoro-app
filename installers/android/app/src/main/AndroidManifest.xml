@@ -39,6 +39,20 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
+
+        <!-- Home Screen AppWidget -->
+        <receiver
+            android:name=".PomodoroWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="io.github.addereum.pomodoro.ACTION_WIDGET_TOGGLE" />
+                <action android:name="io.github.addereum.pomodoro.ACTION_WIDGET_SKIP" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_pomodoro_info" />
+        </receiver>
     </application>
 
 </manifest>

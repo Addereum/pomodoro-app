@@ -10,10 +10,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.provider.OpenableColumns
 import android.provider.Settings
 import android.util.Base64
@@ -38,11 +43,16 @@ class MainActivity : Activity() {
 
     private lateinit var webView: WebView
     private val CHANNEL_ID = "pomodoro_timer_channel"
+    private val ALARM_CHANNEL_ID = "pomodoro_alarm_channel"
     private val NOTIFICATION_ID = 1001
+    private val ALARM_NOTIFICATION_ID = 1002
 
     private val REQUEST_CODE_AUDIO = 2001
     private val REQUEST_CODE_PERMISSION_AUDIO = 2002
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
+
+    private var isPageLoaded = false
+    private var pendingAction: String? = null
 
     private val timerActionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -61,8 +71,9 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         isAppActive = true
+        pendingAction = intent?.action
 
-        createNotificationChannel()
+        createNotificationChannels()
         registerTimerActions()
         requestNotificationPermission()
 
@@ -106,6 +117,15 @@ class MainActivity : Activity() {
             ): WebResourceResponse? {
                 return request?.url?.let { assetLoader.shouldInterceptRequest(it) }
             }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                isPageLoaded = true
+                pendingAction?.let {
+                    handleIncomingAction(it)
+                    pendingAction = null
+                }
+            }
         }
 
         webView.webChromeClient = object : WebChromeClient() {
@@ -125,6 +145,27 @@ class MainActivity : Activity() {
         webView.loadUrl("https://appassets.androidplatform.net/assets/web/index.html")
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        handleIncomingAction(intent?.action)
+    }
+
+    private fun handleIncomingAction(action: String?) {
+        if (action == null) return
+        if (!isPageLoaded) {
+            pendingAction = action
+            return
+        }
+        when (action) {
+            ACTION_TOGGLE -> {
+                webView.evaluateJavascript("if (window.pomodoroApp) window.pomodoroApp.timer.toggle();", null)
+            }
+            ACTION_SKIP -> {
+                webView.evaluateJavascript("if (window.pomodoroApp) window.pomodoroApp.timer.skip();", null)
+            }
+        }
+    }
+
     private fun registerTimerActions() {
         val filter = IntentFilter().apply {
             addAction(ACTION_TOGGLE)
@@ -138,8 +179,11 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun createNotificationChannel() {
+    private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(NotificationManager::class.java) ?: return
+
+            // 1. Timer Status Channel (Low priority, persistent)
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Pomodoro Timer Status",
@@ -148,8 +192,28 @@ class MainActivity : Activity() {
                 description = "Aktueller Timer-Status in der Benachrichtigungsleiste"
                 setShowBadge(false)
             }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager?.createNotificationChannel(channel)
+            manager.createNotificationChannel(channel)
+
+            // 2. Wecker & Alarm Channel (High priority, USAGE_ALARM)
+            val audioAttributes = AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .build()
+            val alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+            val alarmChannel = NotificationChannel(
+                ALARM_CHANNEL_ID,
+                "Pomodoro Wecker & Alarm",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Akustischer Wecker und Alarm beim Phasenabschluss"
+                setSound(alarmSound, audioAttributes)
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 350, 150, 350)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            }
+            manager.createNotificationChannel(alarmChannel)
         }
     }
 
@@ -228,6 +292,13 @@ class MainActivity : Activity() {
                 // Ignore
             }
         }
+
+        // Home Screen AppWidget synchronisieren
+        try {
+            PomodoroWidgetProvider.updateAllWidgets(this, phaseText, formattedTime, isRunning)
+        } catch (e: Exception) {
+            // Ignore
+        }
     }
 
     fun requestDisableBatteryOptimization() {
@@ -299,7 +370,93 @@ class MainActivity : Activity() {
         }
         val manager = NotificationManagerCompat.from(this)
         manager.cancel(NOTIFICATION_ID)
+        manager.cancel(ALARM_NOTIFICATION_ID)
         super.onDestroy()
+    }
+
+    private fun getVibrator(): Vibrator {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+    }
+
+    fun triggerVibration(type: String) {
+        try {
+            val vibrator = getVibrator()
+            if (!vibrator.hasVibrator()) return
+
+            when (type) {
+                "focus" -> {
+                    val timings = longArrayOf(0, 350, 150, 350)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createWaveform(timings, -1))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        vibrator.vibrate(timings, -1)
+                    }
+                }
+                "break" -> {
+                    val timings = longArrayOf(0, 500)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createWaveform(timings, -1))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        vibrator.vibrate(timings, -1)
+                    }
+                }
+                "click" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot(25, VibrationEffect.DEFAULT_AMPLITUDE))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        vibrator.vibrate(25)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore vibration errors
+        }
+    }
+
+    fun triggerPhaseComplete(phase: String, title: String, message: String) {
+        // 1. Phasen-spezifisches Vibrationsmuster
+        triggerVibration(if (phase == "focus") "focus" else "break")
+
+        // 2. High-Priority Heads-Up Wecker Notification
+        val openIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val openPendingIntent = PendingIntent.getActivity(
+            this, 0, openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0)
+        )
+
+        val alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+        val builder = NotificationCompat.Builder(this, ALARM_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(openPendingIntent)
+            .setSound(alarmSound)
+            .setAutoCancel(true)
+
+        val manager = NotificationManagerCompat.from(this)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            try {
+                manager.notify(ALARM_NOTIFICATION_ID, builder.build())
+            } catch (e: SecurityException) {
+                // Ignore if not permitted
+            }
+        }
     }
 
     class WebAppInterface(private val activity: MainActivity) {
@@ -307,6 +464,20 @@ class MainActivity : Activity() {
         fun updateTimerStatus(phase: String, formattedTime: String, isRunning: Boolean) {
             activity.runOnUiThread {
                 activity.updateNotification(phase, formattedTime, isRunning)
+            }
+        }
+
+        @JavascriptInterface
+        fun triggerPhaseComplete(phase: String, title: String, message: String) {
+            activity.runOnUiThread {
+                activity.triggerPhaseComplete(phase, title, message)
+            }
+        }
+
+        @JavascriptInterface
+        fun vibrate(type: String) {
+            activity.runOnUiThread {
+                activity.triggerVibration(type)
             }
         }
 

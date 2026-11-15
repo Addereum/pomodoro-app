@@ -194,6 +194,43 @@ export class DesktopBridge {
     return false;
   }
 
+  triggerPhaseComplete(phase, title, message) {
+    if (window.AndroidBridge && typeof window.AndroidBridge.triggerPhaseComplete === 'function') {
+      try {
+        window.AndroidBridge.triggerPhaseComplete(phase, title, message);
+      } catch (e) {
+        console.warn('AndroidBridge triggerPhaseComplete error:', e);
+      }
+    }
+  }
+
+  vibrate(type = 'click') {
+    // 1. Android Native Bridge
+    if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === 'function') {
+      try {
+        window.AndroidBridge.vibrate(type);
+        return;
+      } catch (e) {
+        console.warn('AndroidBridge vibrate error:', e);
+      }
+    }
+
+    // 2. Browser standard Navigator.vibrate fallback
+    if ('vibrate' in navigator) {
+      try {
+        if (type === 'focus') {
+          navigator.vibrate([350, 150, 350]);
+        } else if (type === 'break') {
+          navigator.vibrate([500]);
+        } else {
+          navigator.vibrate(25);
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }
+
   updateCloseToTray(closeToTray) {
     if (this.isNativeHost) {
       this.postMessage({

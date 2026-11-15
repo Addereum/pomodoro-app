@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Addereums Pomodoro</string>
+    <string name="widget_description">Pomodoro Timer Steuerung und Countdown</string>
 </resources>
