@@ -235,7 +235,7 @@ class MainActivity : Activity() {
 
         // Tap to open app
         val openIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
         val openPendingIntent = PendingIntent.getActivity(
             this, 0, openIntent,
@@ -428,7 +428,7 @@ class MainActivity : Activity() {
 
         // 2. High-Priority Heads-Up Wecker Notification
         val openIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
         val openPendingIntent = PendingIntent.getActivity(
             this, 0, openIntent,

@@ -55,29 +55,29 @@ class PomodoroWidgetProvider : AppWidgetProvider() {
             }
             views.setImageViewResource(R.id.widget_btn_toggle, toggleIcon)
 
-            val flags = PendingIntent.FLAG_UPDATE_CURRENT or (
+            val pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT or (
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
             )
 
             // Klick auf Widget öffnet die App
             val openIntent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
-            val openPendingIntent = PendingIntent.getActivity(context, 0, openIntent, flags)
+            val openPendingIntent = PendingIntent.getActivity(context, 0, openIntent, pendingFlags)
             views.setOnClickPendingIntent(R.id.widget_root, openPendingIntent)
 
             // Start / Pause
             val toggleIntent = Intent(context, PomodoroWidgetProvider::class.java).apply {
                 action = ACTION_WIDGET_TOGGLE
             }
-            val togglePendingIntent = PendingIntent.getBroadcast(context, 101, toggleIntent, flags)
+            val togglePendingIntent = PendingIntent.getBroadcast(context, 101, toggleIntent, pendingFlags)
             views.setOnClickPendingIntent(R.id.widget_btn_toggle, togglePendingIntent)
 
             // Überspringen
             val skipIntent = Intent(context, PomodoroWidgetProvider::class.java).apply {
                 action = ACTION_WIDGET_SKIP
             }
-            val skipPendingIntent = PendingIntent.getBroadcast(context, 102, skipIntent, flags)
+            val skipPendingIntent = PendingIntent.getBroadcast(context, 102, skipIntent, pendingFlags)
             views.setOnClickPendingIntent(R.id.widget_btn_skip, skipPendingIntent)
 
             return views
@@ -106,7 +106,7 @@ class PomodoroWidgetProvider : AppWidgetProvider() {
                 } else {
                     val launchIntent = Intent(context, MainActivity::class.java).apply {
                         action = MainActivity.ACTION_TOGGLE
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                     }
                     context.startActivity(launchIntent)
                 }
@@ -118,7 +118,7 @@ class PomodoroWidgetProvider : AppWidgetProvider() {
                 } else {
                     val launchIntent = Intent(context, MainActivity::class.java).apply {
                         action = MainActivity.ACTION_SKIP
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                     }
                     context.startActivity(launchIntent)
                 }
