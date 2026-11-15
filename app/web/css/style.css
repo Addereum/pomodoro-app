@@ -1489,3 +1489,150 @@ body.compact-mode .confirm-card .modal-actions .btn-action {
   padding: 3px 10px;
   font-size: 0.74rem;
 }
+
+/* ==========================================================================
+   Mobile & Android Responsive Design (Bottom Nav Bar & Adaptive Layout)
+   ========================================================================== */
+
+@media (max-width: 600px) {
+  html, body {
+    overflow-x: hidden;
+  }
+
+  .app-container {
+    padding: 10px 14px calc(74px + env(safe-area-inset-bottom, 0px));
+    height: 100vh;
+    max-width: 100%;
+  }
+
+  /* Cleaner mobile header with brand centered */
+  .app-header {
+    justify-content: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .brand {
+    justify-content: center;
+  }
+
+  .brand-title {
+    font-size: 1.1rem;
+  }
+
+  /* Transform top tabs into native Android Bottom Navigation Bar */
+  .nav-tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    background-color: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 18px 18px 0 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
+    z-index: 1000;
+  }
+
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    font-size: 0.72rem;
+    border-radius: 12px;
+    min-height: 48px; /* Android touch target guideline */
+  }
+
+  .nav-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .nav-btn .badge {
+    position: absolute;
+    top: 4px;
+    right: 20%;
+    font-size: 0.65rem;
+    padding: 1px 5px;
+  }
+
+  /* Touch-friendly scrolling */
+  .app-main {
+    padding-top: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 440px) {
+  /* Smaller dials and tighter padding on small phone screens */
+  .mode-pill-container {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .mode-pill {
+    padding: 5px 12px;
+    font-size: 0.78rem;
+  }
+
+  .timer-dial-wrapper {
+    width: 200px;
+    height: 200px;
+    margin-bottom: 10px;
+  }
+
+  .timer-time {
+    font-size: 2.75rem;
+  }
+
+  .timer-controls {
+    gap: 8px;
+  }
+
+  .btn-timer-primary {
+    padding: 10px 24px;
+    font-size: 0.95rem;
+  }
+
+  .btn-timer-secondary {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+
+  .quick-summary {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .quick-stat-val {
+    font-size: 1.05rem;
+  }
+
+  .quick-stat-lbl {
+    font-size: 0.68rem;
+  }
+
+  /* Settings grid single column on phones */
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .settings-grid .setting-item {
+    grid-column: span 1 !important;
+  }
+}
+
