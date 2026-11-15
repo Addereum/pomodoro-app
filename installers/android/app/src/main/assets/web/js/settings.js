@@ -20,6 +20,8 @@ export const DEFAULT_SETTINGS = {
   desktopNotifications: true,
   autoDnd: true,
   closeToTray: true,
+  keepScreenOn: false,
+  customSoundName: '',
   theme: 'dark' // 'dark' | 'light' | 'system'
 };
 

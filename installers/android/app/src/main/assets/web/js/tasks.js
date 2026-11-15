@@ -94,6 +94,16 @@ export class TaskManager {
     this.save();
   }
 
+  move(id, direction) {
+    const index = this.tasks.findIndex(t => t.id === id);
+    if (index === -1) return;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= this.tasks.length) return;
+    const [moved] = this.tasks.splice(index, 1);
+    this.tasks.splice(targetIndex, 0, moved);
+    this.save();
+  }
+
   setActive(id) {
     if (id === null || id === undefined) {
       this.activeTaskId = null;

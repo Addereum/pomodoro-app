@@ -11,8 +11,8 @@ android {
         applicationId "io.github.addereum.pomodoro"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.2.0"
+        versionCode ((System.getenv("APP_BUILD_NUMBER") ?: "18") as Integer)
+        versionName (System.getenv("APP_VERSION") ?: "1.3.6")
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

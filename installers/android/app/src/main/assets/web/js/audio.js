@@ -8,6 +8,63 @@ export class SoundManager {
     this.soundType = options.soundType || 'bell';
     this.volume = options.volume !== undefined ? options.volume / 100 : 0.8;
     this.audioCtx = null;
+    this.customAudioBuffer = null;
+    this.loadStoredCustomSound();
+  }
+
+  loadStoredCustomSound() {
+    try {
+      const data = localStorage.getItem('pomodoro_custom_sound');
+      if (data) {
+        this.setCustomAudio(data);
+      }
+    } catch (e) {
+      console.warn('Failed to load stored custom sound', e);
+    }
+  }
+
+  async setCustomAudio(base64Data) {
+    if (!base64Data) {
+      this.customAudioBuffer = null;
+      return;
+    }
+    this.initContext();
+    if (!this.audioCtx) return;
+
+    try {
+      const base64Clean = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
+      const binaryString = atob(base64Clean);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      this.audioCtx.decodeAudioData(bytes.buffer.slice(0), (buf) => {
+        this.customAudioBuffer = buf;
+      }, (err) => {
+        console.warn('Error decoding custom audio data:', err);
+      });
+    } catch (e) {
+      console.warn('Failed to parse custom audio base64:', e);
+    }
+  }
+
+  playCustomSound() {
+    if (this.customAudioBuffer && this.audioCtx) {
+      try {
+        const src = this.audioCtx.createBufferSource();
+        const gain = this.audioCtx.createGain();
+        gain.gain.setValueAtTime(this.volume, this.audioCtx.currentTime);
+        src.buffer = this.customAudioBuffer;
+        src.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        src.start();
+      } catch (e) {
+        this.playZenBell();
+      }
+    } else {
+      this.playZenBell();
+    }
   }
 
   initContext() {
@@ -47,6 +104,9 @@ export class SoundManager {
           break;
         case 'digital':
           this.playDigital();
+          break;
+        case 'custom':
+          this.playCustomSound();
           break;
         default:
           this.playZenBell();

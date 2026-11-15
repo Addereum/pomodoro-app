@@ -25,12 +25,17 @@ import androidx.webkit.WebViewAssetLoader
 
 class MainActivity : Activity() {
 
+    companion object {
+        const val ACTION_TOGGLE = "io.github.addereum.pomodoro.ACTION_TOGGLE_TIMER"
+        const val ACTION_SKIP = "io.github.addereum.pomodoro.ACTION_SKIP_PHASE"
+        var isAppActive = false
+        var isTimerRunning = false
+        var currentPhaseName = "Fokus"
+    }
+
     private lateinit var webView: WebView
     private val CHANNEL_ID = "pomodoro_timer_channel"
     private val NOTIFICATION_ID = 1001
-
-    private val ACTION_TOGGLE = "io.github.addereum.pomodoro.ACTION_TOGGLE_TIMER"
-    private val ACTION_SKIP = "io.github.addereum.pomodoro.ACTION_SKIP_PHASE"
 
     private val timerActionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -48,6 +53,7 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        isAppActive = true
 
         createNotificationChannel()
         registerTimerActions()
@@ -190,6 +196,20 @@ class MainActivity : Activity() {
                 // Permission not yet granted
             }
         }
+
+        // Quick Settings Tile synchronisieren
+        isTimerRunning = isRunning
+        currentPhaseName = phaseText
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                android.service.quicksettings.TileService.requestListeningState(
+                    this,
+                    android.content.ComponentName(this, PomodoroTileService::class.java)
+                )
+            } catch (e: Exception) {
+                // Ignore
+            }
+        }
     }
 
     fun requestDisableBatteryOptimization() {
@@ -243,7 +263,17 @@ class MainActivity : Activity() {
         }
     }
 
+    fun setKeepScreenOnFlag(keepOn: Boolean) {
+        if (keepOn) {
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
     override fun onDestroy() {
+        isAppActive = false
+        isTimerRunning = false
         try {
             unregisterReceiver(timerActionReceiver)
         } catch (e: Exception) {
@@ -266,6 +296,13 @@ class MainActivity : Activity() {
         fun requestBatteryOptimization() {
             activity.runOnUiThread {
                 activity.requestDisableBatteryOptimization()
+            }
+        }
+
+        @JavascriptInterface
+        fun setKeepScreenOn(keepOn: Boolean) {
+            activity.runOnUiThread {
+                activity.setKeepScreenOnFlag(keepOn)
             }
         }
     }

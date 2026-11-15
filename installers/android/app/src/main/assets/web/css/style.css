@@ -765,6 +765,56 @@ html, body {
   color: var(--accent-focus);
 }
 
+.task-btn.move-btn:hover {
+  color: var(--active-accent);
+}
+
+/* In-App Version & Build Info Footer */
+.settings-app-info {
+  margin-top: 18px;
+  margin-bottom: 24px;
+  padding: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.app-info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.app-info-version {
+  background: var(--active-glow);
+  color: var(--active-accent);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.app-info-sub {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot-sep {
+  opacity: 0.5;
+}
+
 .empty-state {
   text-align: center;
   padding: 32px 16px;

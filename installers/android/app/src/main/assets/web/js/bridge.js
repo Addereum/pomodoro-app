@@ -153,6 +153,35 @@ export class DesktopBridge {
     }
   }
 
+  setKeepScreenOn(enabled) {
+    // 1. Native Android Bridge
+    if (window.AndroidBridge && typeof window.AndroidBridge.setKeepScreenOn === 'function') {
+      try {
+        window.AndroidBridge.setKeepScreenOn(!!enabled);
+      } catch (e) {
+        console.warn('AndroidBridge keepScreenOn error:', e);
+      }
+    }
+
+    // 2. Web Screen Wake Lock API (Desktop & Mobile Browser)
+    if ('wakeLock' in navigator) {
+      if (enabled) {
+        if (!this.wakeLockSentinel) {
+          navigator.wakeLock.request('screen').then(sentinel => {
+            this.wakeLockSentinel = sentinel;
+          }).catch(err => {
+            console.warn('WakeLock request error:', err);
+          });
+        }
+      } else {
+        if (this.wakeLockSentinel) {
+          this.wakeLockSentinel.release().catch(() => {});
+          this.wakeLockSentinel = null;
+        }
+      }
+    }
+  }
+
   updateCloseToTray(closeToTray) {
     if (this.isNativeHost) {
       this.postMessage({

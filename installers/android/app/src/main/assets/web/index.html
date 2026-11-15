@@ -163,6 +163,7 @@
           <div class="ambient-controls">
             <select id="timer-ambient-select" class="select-box compact-select">
               <option value="none">Stumm</option>
+              <option value="tick">Sanftes Uhrenticken (Klassisch)</option>
               <option value="brown">Braunes Rauschen (Deep Work)</option>
               <option value="rain">Sanfter Regen</option>
               <option value="campfire">Kaminfeuer</option>
@@ -335,6 +336,7 @@
               </div>
               <select id="setting-ambient-type" class="select-box">
                 <option value="none">Aus (Kein Hintergrund-Sound)</option>
+                <option value="tick">Sanftes Uhrenticken (Klassisch)</option>
                 <option value="brown">Braunes Rauschen (Deep Focus)</option>
                 <option value="rain">Sanfter Regen</option>
                 <option value="campfire">Kaminfeuer</option>
@@ -368,6 +370,13 @@
               </div>
               <input type="checkbox" id="setting-auto-focus" class="switch">
             </label>
+            <label class="toggle-row">
+              <div class="toggle-info">
+                <span class="toggle-title">💡 Display während Fokus anlassen</span>
+                <span class="toggle-desc">Verhindert den Ruhezustand des Bildschirms während des Fokus-Timers (WakeLock)</span>
+              </div>
+              <input type="checkbox" id="setting-keep-screen-on" class="switch">
+            </label>
           </div>
 
           <!-- Sound Feedback -->
@@ -383,9 +392,15 @@
                   <option value="bell">Tibetische Klangschale (Zen Gong)</option>
                   <option value="chime">Kristall-Chime (Akkord)</option>
                   <option value="digital">Digitaler Doppel-Beep</option>
+                  <option value="custom">📂 Eigener Sound (Datei wählen...)</option>
                   <option value="none">Stumm</option>
                 </select>
+                <input type="file" id="input-custom-sound" accept="audio/*" style="display: none;">
+                <button type="button" class="btn-action secondary" id="btn-select-custom-sound" style="display: none;">Datei wählen</button>
                 <button type="button" class="btn-action secondary" id="btn-test-sound">Probe hören</button>
+              </div>
+              <div id="custom-sound-info" style="display: none; font-size: 0.78rem; color: var(--text-dim); margin-top: 4px;">
+                Aktive Datei: <span id="custom-sound-name" style="color: var(--active-accent); font-weight: 600;">Keine ausgewählt</span>
               </div>
             </div>
             <div class="setting-row">
@@ -459,6 +474,19 @@
           <div class="settings-actions">
             <button type="button" class="btn-action secondary" id="btn-defaults">Standardwerte</button>
             <button type="submit" class="btn-action primary">Einstellungen speichern</button>
+          </div>
+
+          <!-- In-App Version & Genuine Git Build Footer -->
+          <div class="settings-app-info">
+            <div class="app-info-badge">
+              <span class="app-info-name">Addereums Pomodoro</span>
+              <span class="app-info-version">v<span id="app-version-text">1.3.6</span></span>
+            </div>
+            <div class="app-info-sub">
+              <span>Build #<span id="app-build-number">18</span></span>
+              <span class="dot-sep">•</span>
+              <span>Commit <span id="app-commit-hash">581d960</span></span>
+            </div>
           </div>
         </form>
       </section>

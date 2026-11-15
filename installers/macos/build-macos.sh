@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build macOS .app Bundle and DMG / ZIP
-VERSION="1.1.1"
+VERSION="${APP_VERSION:-$(git describe --tags --always 2>/dev/null | sed 's/^v//' || echo "1.3.6")}"
 APP_NAME="Addereums Pomodoro"
 BUNDLE_NAME="${APP_NAME}.app"
 
@@ -24,8 +24,9 @@ RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 mkdir -p "${MACOS_DIR}"
 mkdir -p "${RESOURCES_DIR}/app"
 
-# 1. Info.plist kopieren
+# 1. Info.plist kopieren & Version aktualisieren
 cp "${SCRIPT_DIR}/Info.plist" "${CONTENTS_DIR}/Info.plist"
+sed -i "s/1.1.1/${VERSION}/g" "${CONTENTS_DIR}/Info.plist" 2>/dev/null || sed -i '' "s/1.1.1/${VERSION}/g" "${CONTENTS_DIR}/Info.plist" 2>/dev/null || true
 
 # 2. Launcher-Skript erstellen
 cat << 'EOF' > "${MACOS_DIR}/${APP_NAME}"

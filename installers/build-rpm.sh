@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build Fedora / RHEL / openSUSE (.rpm) package
-VERSION="1.1.1"
+VERSION="${APP_VERSION:-$(git describe --tags --always 2>/dev/null | sed 's/^v//' || echo "1.3.6")}"
 PKG_NAME="pomodoro-app"
 RELEASE="1"
 

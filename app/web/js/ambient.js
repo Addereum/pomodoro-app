@@ -48,17 +48,25 @@ export class AmbientSoundManager {
     }
   }
 
-  start() {
+  start(fadeDuration = 1.8) {
     if (this.soundType === 'none' || this.volume <= 0) {
-      this.stop();
+      this.stop(0);
       return;
     }
 
     this.initContext();
     if (!this.audioCtx) return;
 
-    this.stop(); // Stop any existing nodes first
+    this.stop(0); // Sofortige Beendigung vorheriger Sounds
     this.isPlaying = true;
+
+    // Sanftes Einblenden (Fade-In)
+    const now = this.audioCtx.currentTime;
+    if (this.masterGain && fadeDuration > 0) {
+      this.masterGain.gain.cancelScheduledValues(now);
+      this.masterGain.gain.setValueAtTime(0.0001, now);
+      this.masterGain.gain.linearRampToValueAtTime(this.volume, now + fadeDuration);
+    }
 
     switch (this.soundType) {
       case 'brown':
@@ -70,26 +78,53 @@ export class AmbientSoundManager {
       case 'campfire':
         this.startCampfireSound();
         break;
+      case 'tick':
+        this.startClockTick();
+        break;
       default:
         this.isPlaying = false;
     }
   }
 
-  stop() {
+  stop(fadeDuration = 1.8) {
+    if (!this.isPlaying && this.activeNodes.length === 0 && !this.timerId) return;
+
     this.isPlaying = false;
     clearInterval(this.timerId);
+    clearTimeout(this.timerId);
     this.timerId = null;
 
-    if (this.activeNodes.length > 0) {
-      this.activeNodes.forEach(node => {
-        try {
-          if (node.stop) node.stop();
-          if (node.disconnect) node.disconnect();
-        } catch (e) {
-          // Ignore
-        }
-      });
+    if (this.audioCtx && this.masterGain && fadeDuration > 0) {
+      const now = this.audioCtx.currentTime;
+      const nodesToCleanup = [...this.activeNodes];
       this.activeNodes = [];
+
+      this.masterGain.gain.cancelScheduledValues(now);
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+      this.masterGain.gain.linearRampToValueAtTime(0.0001, now + fadeDuration);
+
+      setTimeout(() => {
+        nodesToCleanup.forEach(node => {
+          try {
+            if (node.stop) node.stop();
+            if (node.disconnect) node.disconnect();
+          } catch (e) {
+            // Ignore
+          }
+        });
+      }, fadeDuration * 1000);
+    } else {
+      if (this.activeNodes.length > 0) {
+        this.activeNodes.forEach(node => {
+          try {
+            if (node.stop) node.stop();
+            if (node.disconnect) node.disconnect();
+          } catch (e) {
+            // Ignore
+          }
+        });
+        this.activeNodes = [];
+      }
     }
   }
 
@@ -230,5 +265,66 @@ export class AmbientSoundManager {
     };
 
     triggerCrackle();
+  }
+
+  /**
+   * Sanftes mechanisches Uhrenticken (Klassischer Pomodoro Fokus-Sound)
+   */
+  startClockTick() {
+    const ctx = this.audioCtx;
+    let tickToggle = false;
+
+    const playSingleTick = () => {
+      if (!this.isPlaying || !this.audioCtx) return;
+      try {
+        const now = this.audioCtx.currentTime;
+
+        // Mechanischer Resonator (heller Klick)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(tickToggle ? 2800 : 2200, now);
+        filter.Q.setValueAtTime(9, now);
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(tickToggle ? 900 : 720, now);
+
+        // Holzgehäuse-Körper Resonanz (tieferer, warmer Körper)
+        const woodOsc = ctx.createOscillator();
+        const woodGain = ctx.createGain();
+        woodOsc.type = 'sine';
+        woodOsc.frequency.setValueAtTime(tickToggle ? 240 : 190, now);
+
+        const tickVol = 0.55;
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.exponentialRampToValueAtTime(tickVol, now + 0.002);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.022);
+
+        woodGain.gain.setValueAtTime(0.001, now);
+        woodGain.gain.exponentialRampToValueAtTime(tickVol * 0.35, now + 0.003);
+        woodGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+
+        woodOsc.connect(woodGain);
+        woodGain.connect(this.masterGain);
+
+        osc.start(now);
+        osc.stop(now + 0.03);
+        woodOsc.start(now);
+        woodOsc.stop(now + 0.04);
+
+        tickToggle = !tickToggle;
+      } catch (e) {
+        // Ignore audio interruption
+      }
+    };
+
+    playSingleTick();
+    this.timerId = setInterval(playSingleTick, 1000);
   }
 }

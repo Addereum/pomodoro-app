@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build standalone Linux AppImage
-VERSION="1.1.1"
+VERSION="${APP_VERSION:-$(git describe --tags --always 2>/dev/null | sed 's/^v//' || echo "1.3.6")}"
 PKG_NAME="Addereums-Pomodoro"
 APPIMAGE_NAME="${PKG_NAME}-${VERSION}-x86_64.AppImage"
 

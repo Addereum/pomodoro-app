@@ -9,6 +9,7 @@ import { TaskManager } from './tasks.js';
 import { StatsTracker } from './stats.js';
 import { SettingsManager } from './settings.js';
 import { DesktopBridge } from './bridge.js';
+import { APP_VERSION, APP_BUILD, APP_COMMIT } from './version.js';
 
 class App {
   constructor() {
@@ -134,7 +135,12 @@ class App {
     this.ambientVolumeLabel = document.getElementById('ambient-volume-label');
     this.inputAutoBreak = document.getElementById('setting-auto-break');
     this.inputAutoFocus = document.getElementById('setting-auto-focus');
+    this.inputKeepScreenOn = document.getElementById('setting-keep-screen-on');
     this.selectSoundType = document.getElementById('setting-sound-type');
+    this.inputCustomSound = document.getElementById('input-custom-sound');
+    this.btnSelectCustomSound = document.getElementById('btn-select-custom-sound');
+    this.customSoundInfo = document.getElementById('custom-sound-info');
+    this.customSoundName = document.getElementById('custom-sound-name');
     this.btnTestSound = document.getElementById('btn-test-sound');
     this.sliderSoundVolume = document.getElementById('setting-sound-volume');
     this.volumeLabel = document.getElementById('volume-label');
@@ -145,6 +151,9 @@ class App {
     this.btnBatteryOpt = document.getElementById('btn-battery-opt');
     this.selectTheme = document.getElementById('setting-theme');
     this.btnDefaults = document.getElementById('btn-defaults');
+    this.appVersionText = document.getElementById('app-version-text');
+    this.appBuildNumber = document.getElementById('app-build-number');
+    this.appCommitHash = document.getElementById('app-commit-hash');
 
     // Session Note Modal
     this.noteModal = document.getElementById('note-modal');
@@ -423,6 +432,48 @@ class App {
       }
     });
 
+    // Custom Sound Selection & File Input
+    if (this.selectSoundType) {
+      this.selectSoundType.addEventListener('change', (e) => {
+        const isCustom = e.target.value === 'custom';
+        if (this.btnSelectCustomSound) {
+          this.btnSelectCustomSound.style.display = isCustom ? 'inline-flex' : 'none';
+        }
+        if (this.customSoundInfo) {
+          this.customSoundInfo.style.display = isCustom ? 'block' : 'none';
+        }
+      });
+    }
+
+    if (this.btnSelectCustomSound && this.inputCustomSound) {
+      this.btnSelectCustomSound.addEventListener('click', () => {
+        this.inputCustomSound.click();
+      });
+
+      this.inputCustomSound.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result;
+          try {
+            localStorage.setItem('pomodoro_custom_sound', dataUrl);
+            localStorage.setItem('pomodoro_custom_sound_name', file.name);
+            this.sound.setCustomAudio(dataUrl);
+            if (this.customSoundName) {
+              this.customSoundName.textContent = file.name;
+            }
+            this.showToast(`Eigener Sound geladen: ${file.name}`);
+            this.sound.play('custom');
+          } catch (err) {
+            this.showToast('⚠️ Audiodatei zu groß für Speicher');
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     if (this.btnBatteryOpt) {
       if (window.AndroidBridge) {
         if (this.rowBatteryOpt) this.rowBatteryOpt.style.display = 'flex';
@@ -576,11 +627,15 @@ class App {
       this.compactIconPause.style.display = isRunning ? 'block' : 'none';
     }
 
-    // Ambient Sound Auto-Play/Pause
+    // 💡 Screen WakeLock (Display während Fokus anlassen)
+    const keepScreenOn = !!this.settings.get().keepScreenOn;
+    this.bridge.setKeepScreenOn(keepScreenOn && isRunning && data.phase === 'focus');
+
+    // Ambient Sound Auto-Play/Pause mit sanftem Ein- und Ausblenden
     if (isRunning && data.phase === 'focus') {
-      this.ambient.start();
+      this.ambient.start(1.8);
     } else {
-      this.ambient.stop();
+      this.ambient.stop(1.8);
     }
 
     // Cycle dots
@@ -717,6 +772,16 @@ class App {
           </div>
         </div>
         <div class="task-actions">
+          <button class="task-btn move-btn move-up" title="Nach oben verschieben">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="18 15 12 9 6 15"/>
+            </svg>
+          </button>
+          <button class="task-btn move-btn move-down" title="Nach unten verschieben">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
           <button class="task-btn delete" title="Aufgabe löschen">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"/>
@@ -738,6 +803,18 @@ class App {
           this.tasks.setActive(task.id);
           this.showToast(`Aufgabe "${task.title}" als Fokus gewählt`);
         }
+      });
+
+      const btnUp = li.querySelector('.task-btn.move-up');
+      btnUp.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.tasks.move(task.id, -1);
+      });
+
+      const btnDown = li.querySelector('.task-btn.move-down');
+      btnDown.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.tasks.move(task.id, 1);
       });
 
       const btnDelete = li.querySelector('.task-btn.delete');
@@ -832,7 +909,24 @@ class App {
     }
     this.inputAutoBreak.checked = !!cfg.autoStartBreaks;
     this.inputAutoFocus.checked = !!cfg.autoStartFocus;
+    if (this.inputKeepScreenOn) {
+      this.inputKeepScreenOn.checked = !!cfg.keepScreenOn;
+    }
     this.selectSoundType.value = cfg.soundType;
+
+    // Custom sound visibility & file name
+    const isCustom = cfg.soundType === 'custom';
+    if (this.btnSelectCustomSound) {
+      this.btnSelectCustomSound.style.display = isCustom ? 'inline-flex' : 'none';
+    }
+    if (this.customSoundInfo) {
+      this.customSoundInfo.style.display = isCustom ? 'block' : 'none';
+      const storedName = localStorage.getItem('pomodoro_custom_sound_name');
+      if (this.customSoundName) {
+        this.customSoundName.textContent = storedName || 'Keine Datei ausgewählt';
+      }
+    }
+
     this.sliderSoundVolume.value = cfg.soundVolume;
     this.volumeLabel.textContent = `${cfg.soundVolume}%`;
 
@@ -859,6 +953,11 @@ class App {
       this.inputCloseToTray.checked = cfg.closeToTray !== undefined ? !!cfg.closeToTray : true;
     }
     this.selectTheme.value = cfg.theme;
+
+    // Genuine Version & Git Build Info
+    if (this.appVersionText) this.appVersionText.textContent = APP_VERSION;
+    if (this.appBuildNumber) this.appBuildNumber.textContent = APP_BUILD;
+    if (this.appCommitHash) this.appCommitHash.textContent = APP_COMMIT;
   }
 
   saveSettingsFromForm() {
@@ -872,6 +971,7 @@ class App {
       ambientVolume: parseInt(this.settingAmbientVolume.value, 10),
       autoStartBreaks: this.inputAutoBreak.checked,
       autoStartFocus: this.inputAutoFocus.checked,
+      keepScreenOn: this.inputKeepScreenOn ? this.inputKeepScreenOn.checked : false,
       soundType: this.selectSoundType.value,
       soundVolume: parseInt(this.sliderSoundVolume.value, 10),
       desktopNotifications: this.inputNotifyDesktop.checked,

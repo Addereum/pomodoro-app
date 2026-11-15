@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build Debian / Ubuntu (.deb) package
-VERSION="1.1.1"
+VERSION="${APP_VERSION:-$(git describe --tags --always 2>/dev/null | sed 's/^v//' || echo "1.3.6")}"
 PKG_NAME="pomodoro-app"
 ARCH="all"
 DEB_NAME="${PKG_NAME}_${VERSION}_${ARCH}.deb"
@@ -27,9 +27,9 @@ mkdir -p "${BUILD_DIR}/usr/share/applications"
 mkdir -p "${BUILD_DIR}/usr/share/icons/hicolor/scalable/apps"
 
 # 1. DEBIAN/control
-cat << 'EOF' > "${BUILD_DIR}/DEBIAN/control"
+cat << EOF > "${BUILD_DIR}/DEBIAN/control"
 Package: pomodoro-app
-Version: 1.1.1
+Version: ${VERSION}
 Section: utils
 Priority: optional
 Architecture: all

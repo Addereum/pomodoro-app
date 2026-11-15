@@ -5,7 +5,7 @@ set -euo pipefail
 # Build Script: Windows App & Modern Graphical Installer (.exe & .zip)
 # ==============================================================================
 
-VERSION="1.0.0"
+VERSION="${APP_VERSION:-$(git describe --tags --always 2>/dev/null | sed 's/^v//' || echo "1.3.6")}"
 PKG_NAME="pomodoro-app"
 ARCH="windows-x64"
 ZIP_NAME="${PKG_NAME}-${VERSION}-${ARCH}.zip"

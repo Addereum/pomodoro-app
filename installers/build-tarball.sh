@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build Portable Linux Tarball (.tar.gz)
-VERSION="1.0.0"
+VERSION="${APP_VERSION:-$(git describe --tags --always 2>/dev/null | sed 's/^v//' || echo "1.3.6")}"
 PKG_NAME="pomodoro-app"
 ARCH="linux-x86_64"
 TAR_NAME="${PKG_NAME}-${VERSION}-${ARCH}-portable.tar.gz"
